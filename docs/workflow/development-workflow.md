@@ -14,7 +14,7 @@
 | Version | Date | Author | Change |
 |---|---|---|---|
 | v0.1 | 27/10/2026 | D. Villanueva | First draft (PDF). |
-| v0.2 | 05/11/2026 | D. Villanueva | Converted to Markdown. Review against the current repository state, the architecture proposal v0.3 (PR #11) and the quality strategy. Branch, commit and PR rules moved to `CONTRIBUTING.md`. |
+| v0.2 | 05/11/2026 | D. Villanueva | Converted to Markdown. Review against the current repository state, the architecture proposal v0.3 (PR #11) and the quality strategy. Branch, commit and PR rules moved to `CONTRIBUTING.md`. Configuration test skeleton implemented (§5). |
 
 ## 1. Purpose and scope
 
@@ -119,7 +119,7 @@ See `CONTRIBUTING.md` §4.
 | 7 | Labels (`requirement`, `use-case`, `bug`, `docs`, `ci`, `iteration-0`…) | **Pending**: only GitHub default labels |
 | 8 | Kanban board with five columns | To be checked |
 | 9 | Milestones for planned releases | **Pending** |
-| 10 | `.gitignore` (Java, Maven, Eclipse, VS Code) and README with wiki link | `.gitignore` is the GitHub Java template: **missing `target/` and IDE files** |
+| 10 | `.gitignore` (Java, Maven, Eclipse, VS Code) and README with wiki link | `.gitignore` now covers Maven `target/` and IDE files; README links the docs (**wiki link pending**) |
 | 11 | Wiki home page with index; final section "Self-Assessment and Experience" | Issue #1 open |
 
 ### 4.2 Local environment (every member)
@@ -152,16 +152,43 @@ repo/
 
 ### 4.4 Continuous integration
 
-A GitHub Actions workflow builds and tests every PR into `develop` and `main` with `mvn -B verify`, and publishes the Surefire and JaCoCo reports (`quality-testing-strategy.md` §3). It becomes a required status check once it has run once. *Pending; coordinate with the quality owner.*
+A GitHub Actions workflow builds and tests every PR into `develop` and `main` with `mvn -B verify`, and publishes the Surefire and JaCoCo reports (`quality-testing-strategy.md` §3). It becomes a required status check once it has run once. Implemented in `.github/workflows/ci.yml` (§5.1); *threshold and required check to be agreed with the quality owner.*
 
 ## 5. Small configuration test
 
 The test in v0.1 §5 stays valid: a parent POM, `module-a` exposing an interface in an `api` package, `module-b` using only that interface, one JUnit 5 test and the CI workflow. Then the full chain Issue → branch → PR → CI → review → merge → closed Issue, a negative test (a failing PR is blocked, a direct push is rejected) and a release rehearsal (`release/0.1.0` → tag `v0.1.0`).
 
-**Changes for v0.2** (to be implemented in a separate task):
+### 5.1 Implemented skeleton (v0.2)
 
-- Add the JaCoCo report to the build and upload the reports from CI.
-- Agree on the `groupId` and on whether the test uses generic modules or two real level-0 modules (for example `radio-audit` and `radio-catalogue`). See §6.
+| Item | File | Content |
+|---|---|---|
+| Parent POM | `pom.xml` | `es.uclm.sescam:sescam-parent:0.1.0-SNAPSHOT`, packaging `pom`, Java 17 (`maven.compiler.release`), JUnit BOM 5.10.2, pinned compiler/surefire/JaCoCo plugin versions, JaCoCo report in `verify` (report only, no threshold). |
+| Module A | `module-a/` | Interface `es.uclm.sescam.modulea.api.Greeter` and its implementation in `...modulea.internal.DefaultGreeter`. Tests: normal flow and exception flow (null/blank name). |
+| Module B | `module-b/` | `es.uclm.sescam.moduleb.Welcome` receives a `Greeter` and imports only `...modulea.api`. Its test uses a stub of the interface, not the real implementation. |
+| CI | `.github/workflows/ci.yml` | Job `build`: Temurin 17, Maven cache, `mvn -B verify`, uploads Surefire and JaCoCo reports as the `test-reports` artifact (also when the build fails). |
+| Ignore rules | `.gitignore` | `target/` and Eclipse, IntelliJ and VS Code files. |
+
+Module names are generic on purpose. They will be replaced by the `radio-*` modules when D-13 is accepted (§8).
+
+### 5.2 Results
+
+| Check | Result (05/11/2026, D. Villanueva, local) |
+|---|---|
+| `mvn -B verify` | BUILD SUCCESS, 6 tests (4 in module A, 2 in module B), 0 failures |
+| JaCoCo report | Generated in `module-a/target/site/jacoco/` and `module-b/target/site/jacoco/` |
+| Module boundary | `module-b` only imports `es.uclm.sescam.modulea.api.Greeter` |
+| Negative test (local) | A broken assertion makes `mvn -B verify` fail (exit code 1) |
+| CI on GitHub | *Pending: runs on the first PR into `develop`* |
+
+### 5.3 Remaining steps (team)
+
+These need the admin and other members (v0.1 §5.7, steps 2 to 10):
+
+1. Admin marks the `build` check as required in the protection of `develop` and `main`.
+2. A PR with a deliberately failing test is blocked; a direct push to `develop` is rejected.
+3. Another member reviews and merges; the Issue closes and the board moves it to Done.
+4. Release rehearsal: `release/0.1.0` → `main`, tag `v0.1.0`, merge back into `develop`.
+5. Every member clones the repository and runs `mvn -B verify` successfully.
 
 ## 6. Review notes (v0.1 → v0.2)
 
