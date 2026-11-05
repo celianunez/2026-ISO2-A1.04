@@ -1,187 +1,192 @@
-# SESCAM Radiodiagnostics – Initial Architecture Proposal
+# SESCAM Radiodiagnostics – Architecture Proposal
 
 | | |
 |---|---|
 | **Author** | Alejandro Aceña |
 | **Group** | ISO II – 3A1.04 |
-| **Status** | Draft v0.2 – for team discussion |
-| **Date** | 27/10/2026 |
-| **Input** | `historias_de_usuario_SESCAM_v2.xlsx` (26 user stories, 45 use cases) |
+| **Status** | Draft v0.3 – reviewed with Pablo, to be confirmed at the team meeting |
+| **Date** | 04/11/2026 |
+| **Inputs** | `historias_de_usuario_SESCAM_v2.xlsx` (26 user stories, 45 use cases), Pablo's feedback on the Maven structure (02/11/2026) |
 
 ## 1. Purpose
 
-This document covers my assigned task:
+This version covers my second task:
 
-- identify the main software components and the responsibility of each one,
-- identify the main interfaces and how the components communicate,
-- prepare an initial component diagram,
-- list the architectural decisions and questions the team needs to discuss,
-- estimate the effort with and without AI.
+- review the architecture draft,
+- confirm the main components and their responsibilities,
+- identify the main interfaces and dependencies,
+- check that the architecture covers the user stories and use cases,
+- align the components with Pablo's Maven structure,
+- record the key decisions in `DECISIONS.md`.
 
-The components come from the user stories (HU) and use cases (CU) in the v2 Excel. Section 9 maps every user story to its components.
+### Changes since v0.2
 
-**Actors** (from HU-18 and the use cases):
+- **One Maven submodule per component**, as the assignment requires. There are **17 component modules** plus `radio-app`, which only starts the application and has no business logic. The components have been renumbered C1–C17 to match the modules.
+- **No central API module.** Each module has its own `api`: its public interfaces, its DTOs and its REST controllers. Every interface lives in the module of the component that provides it. The old C2 "API / Controllers" component disappears.
+- **No central persistence module.** Each module has its own repositories and tables. The old C17 "Persistence" component disappears.
+- The **messaging adapter** (email/push) is now inside `radio-notification`, because only that module uses it and it has no user story of its own.
+- **Technology:** Java 17, Spring Boot 3.5.16, JUnit 5 (Pablo's proposal).
+- Permissions are checked with **Spring Security**, configured in `radio-auth`. The other modules do not need a Maven dependency on `radio-auth`, which avoids dependency cycles.
+- New: a table of dependencies between modules (section 5) and the coverage of the 45 use cases (section 9).
 
-- *People:* patient, physician, admissions staff, system administrator.
-- *External systems:* corporate SSO, HCE/admission (FHIR/HL7), RIS/PACS (DICOM), email/push channel.
-- *Timer:* a job scheduler that sends reminders and generates follow-up requests.
+## 2. Architectural style and technology
 
-Nothing here is final. It must be agreed with the team before implementation starts.
+- **Style:** a modular monolith. There are 17 component modules, deployed together as **one Spring Boot application** (`radio-app`).
+- **Inside each module:** the layers are `api` (public interfaces, DTOs, REST controllers), `domain`, `application` and `infrastructure`.
+- **Module communication:** modules communicate only through the other module's `api` interfaces. A module never uses another module's classes or tables directly.
+- **External systems:** each one (SSO, HCE/admission, PACS) has its own adapter module with a **simulator**, as HU-20, HU-21 and HU-24 require.
+- **Stack:** Java 17 · Maven (multi-module) · Spring Boot 3.5.16 · JUnit 5.
 
-## 2. Architectural style
+## 3. Components (= Maven modules)
 
-**Proposal: a layered modular monolith.**
-
-- **Layers:** Presentation → Business → Infrastructure.
-- **Modules:** the business layer has one module per functional area. The 26 user stories are grouped into 13 modules instead of one module per story (the Excel suggests looking for more cohesive modules).
-- **Interfaces:** each module exposes a public interface (`I...Service`). Other modules may only use that interface. They never access another module's classes or database tables directly.
-- **External systems:** each one is accessed through an interface (`I...Gateway`) implemented by a replaceable adapter. Each adapter has a **simulator**, as HU-20, HU-21 and HU-24 require.
-
-**Why:**
-
-- It fits a team of 6 and the course timeline.
-- It needs a single deployment.
-- It is easy to test with mocks and simulators.
-- It is easy to map to a Maven project.
-- *Microservices* were rejected: too much overhead for the scope.
-
-## 3. Components and responsibilities
-
-| ID | Component | Layer | Responsibility | User stories |
-|----|-----------|-------|----------------|--------------|
-| C1 | UI Client | Presentation | Screens for each role (patient, physician, admissions, administrator). No business logic. | all |
-| C2 | API / Controllers | Presentation | Entry point for the UI. Validates input and checks authentication and permissions on the server for every request. | all |
-| C3 | Identity & Access | Business | SSO login, users, roles and permissions; assigns the role from the corporate identity. | HU-18, HU-20 |
-| C4 | Configuration | Business | System parameters: room schedules, appointment policies, priority levels, reminder lead time. Changes apply only to future appointments. | HU-17 |
-| C5 | Test Catalogue & Guides | Business | Test types with all their attributes (modality, room/equipment, duration, preparation, contrast/consent, restrictions, follow-up suitability) and the clinical guides of each test. Logical deactivation. | HU-23, HU-05 |
-| C6 | Patients | Business | Register, update and deactivate patients (logical deactivation, no duplicates). Gets patient data from HCE/admission. | HU-12, HU-21 |
-| C7 | Diagnostic Requests | Business | Physician prescribes tests (indication, justification, priority); follow-up series with recurrence; request status and filters; follow-up calendar for the patient. **Owns the request status.** | HU-06, HU-07, HU-08, HU-05 |
-| C8 | Scheduling | Business | Agenda and free slots, assigning appointments without overlaps, confirm/cancel/reschedule, patient change requests, daily worklists, waiting list by priority, proposing freed slots. | HU-01, HU-13, HU-26, HU-14, HU-15, HU-08 |
-| C9 | Exam Execution | Business | Records how the exam was performed (actual time, room/equipment, notes) and its incidents. Marks the request as performed. | HU-10 |
-| C10 | Diagnostic Reports | Business | Drafting, editing, reviewing and signing reports with versioning (a signed report is never overwritten). Patient's test history. | HU-09, HU-03 |
-| C11 | Image Access | Business | Opens the DICOM web viewer from the report, applies the image access policy, shows a clear message if the PACS is down. | HU-25, HU-24 |
-| C12 | Incidents & Surveys | Business | Patient incidents (optionally linked to an appointment) and a satisfaction survey (only once per completed test). | HU-04 |
-| C13 | Metrics & Statistics | Business | **One shared metrics engine** for physician metrics, operational reports and global statistics. Filters by period and export. | HU-11, HU-16, HU-22 |
-| C14 | Notifications | Cross-cutting | Reminders, preparation instructions, report-available notices, patient inbox. The sending channel (email/push) is decoupled. | HU-02 (used by HU-01, 09, 13, 26) |
-| C15 | Audit | Cross-cutting | Records user, date, action and resource for every access to clinical data, and lets the administrator query it. Records cannot be edited or deleted. | HU-19 (used by HU-03, 09, 25, 15, 17, 18) |
-| C16 | Job Scheduler | Cross-cutting | The "timer" actor: sends due reminders and generates follow-up requests. | HU-02, HU-07 |
-| C17 | Persistence | Infrastructure | Repository implementations (JPA/JDBC) for each module. | all |
-| C18 | SSO Adapter | Infrastructure | Implements `ISsoGateway`, plus an SSO simulator for testing. | HU-20 |
-| C19 | HCE / Admission Adapter | Infrastructure | Implements `IHceGateway` (FHIR/HL7), plus a simulator. | HU-21 |
-| C20 | RIS/PACS Adapter | Infrastructure | Implements `IPacsGateway` (DICOM query and retrieve), plus a simulator. Images are not copied. | HU-24 |
-| C21 | Messaging Adapter | Infrastructure | Implements `IMessageChannel` (email/push; a stub at first). | HU-02 |
+| ID | Maven module | Component | Responsibility | Provides | REST api | User stories |
+|----|--------------|-----------|----------------|----------|----------|--------------|
+| C1 | `radio-auth` | Identity & Access | SSO login, users, roles and permissions (matrix of 4 roles). Configures Spring Security for the whole application. | `IAuthenticationService`, `IAuthorizationService` | `/api/auth` | HU-18, HU-20 |
+| C2 | `radio-configuration` | Configuration | Room schedules, appointment policies, priority levels, reminder lead time. Changes apply only to future appointments. | `IConfigurationService` | `/api/config` | HU-17 |
+| C3 | `radio-catalogue` | Test Catalogue & Guides | Test types and their attributes (modality, room/equipment, duration, preparation, contrast/consent, restrictions, follow-up suitability). Clinical guides. Logical deactivation. | `ICatalogueService` | `/api/catalogue` | HU-23, HU-05 |
+| C4 | `radio-patient` | Patients | Register, update and deactivate patients (logical deactivation, no duplicates). Gets data from HCE/admission. | `IPatientService` | `/api/patients` | HU-12, HU-21 |
+| C5 | `radio-request` | Diagnostic Requests | Prescribing tests, follow-up series, priority changes, filters, follow-up calendar. **Owns the request status.** | `IRequestService` | `/api/requests` | HU-06, HU-07, HU-08, HU-05, HU-15 |
+| C6 | `radio-scheduling` | Scheduling | Agenda and free slots, booking without overlaps, confirm/cancel/reschedule, change requests, daily worklists, waiting list, proposing freed slots. | `ISchedulingService` | `/api/appointments` | HU-01, HU-13, HU-26, HU-14, HU-15, HU-08 |
+| C7 | `radio-execution` | Exam Execution | Records how the exam was performed (actual time, room/equipment, notes) and its incidents. | `IExecutionService` | `/api/executions` | HU-10 |
+| C8 | `radio-report` | Diagnostic Reports | Draft, edit, review and sign reports. Signed reports are versioned and never overwritten. Patient's test history. | `IReportService` | `/api/reports` | HU-09, HU-03 |
+| C9 | `radio-image` | Image Access | Opens the DICOM web viewer from the report, applies the image access policy, shows a clear message if the PACS is down. | `IImageService` | `/api/images` | HU-25, HU-24 |
+| C10 | `radio-feedback` | Incidents & Surveys | Patient incidents, and a satisfaction survey only once per completed test. | `IFeedbackService` | `/api/feedback` | HU-04 |
+| C11 | `radio-metrics` | Metrics & Statistics | One metrics engine for physician metrics, operational reports and global statistics. Filters by period and export. | `IMetricsService` | `/api/metrics` | HU-11, HU-16, HU-22 |
+| C12 | `radio-notification` | Notifications | Notifications, reminders, preparation instructions, patient inbox. Contains the email/push channel (a stub at first). | `INotificationService` | `/api/notifications` | HU-02 |
+| C13 | `radio-audit` | Audit | Records user, date, action and resource for every access to clinical data, and lets the administrator query it. Records cannot be edited or deleted. | `IAuditService` | `/api/audit` | HU-19 |
+| C14 | `radio-jobs` | Job Scheduler | The "timer" actor: sends due reminders and generates follow-up requests. | – | – | HU-02, HU-07 |
+| C15 | `radio-sso-adapter` | SSO Adapter | Connection to the corporate SSO, plus a simulator. | `ISsoGateway` | – | HU-20 |
+| C16 | `radio-hce-adapter` | HCE / Admission Adapter | FHIR/HL7 connection to HCE and admission, plus a simulator. | `IHceGateway` | – | HU-21 |
+| C17 | `radio-pacs-adapter` | RIS/PACS Adapter | DICOM query and retrieve, plus a simulator. Images are never copied. | `IPacsGateway` | – | HU-24 |
+| – | `radio-app` | *(not a component)* | `@SpringBootApplication`, configuration (`application.yml`, profiles to choose real adapters or simulators), static web pages of the UI. Depends on all 17 modules and builds the executable jar. | – | – | – |
 
 ## 4. Interfaces
 
-### 4.1 Interfaces provided by the modules
+Each interface lives in the `api` package of the module that provides it.
 
-| Interface | Provided by | Used by | Main operations (draft) |
-|-----------|-------------|---------|-------------------------|
-| `IAuthenticationService` | C3 | C2 | `loginWithSso()`, `currentUser()`, `logout()` |
-| `IAuthorizationService` | C3 | C2, all modules | `hasPermission(user, action, resource)`, `assignRole(...)`, `removeRole(...)` |
-| `IConfigurationService` | C4 | C8, C14 | `getRoomSchedule(room)`, `getAppointmentPolicy()`, `getPriorityLevels()`, `getReminderLeadTime()`, `update(parameter, value)` |
-| `ICatalogueService` | C5 | C7, C8, C14 | `findTestType(id)`, `listActiveTestTypes()`, `isRequestable(id)`, `getGuides(testType)`, `create/update/deactivate(...)` |
-| `IPatientService` | C6 | C2, C7, C8 | `register(data)`, `update(id, data)`, `deactivate(id)`, `findById(id)`, `search(criteria)` |
-| `IRequestService` | C7 | C2, C8, C9, C10, C16 | `create(request)`, `createFollowUpSeries(...)`, `suspendSeries(id)`, `find(filters)`, `getPendingForScheduling()`, `changePriority(id, priority, justification)`, `markScheduled(id)`, `markPerformed(id)`, `markReported(id)`, `cancel(id)`, `generateDueFollowUps()`, `getFollowUpCalendar(patient)` |
-| `ISchedulingService` | C8 | C2, C9, C12 | `findFreeSlots(testType, period)`, `book(requestId, slot)`, `confirm(id)`, `cancel(id)`, `reschedule(id, slot)`, `requestChange(id, ...)`, `resolveChange(id, accepted)`, `getPatientAppointments(patient)`, `getDailyWorklist(date, room/professional)`, `reassign(...)`, `getWaitingList()` |
-| `IExecutionService` | C9 | C2, C10 | `registerExecution(appointmentId, data)`, `registerIncident(executionId, incident)`, `getExecution(requestId)` |
-| `IReportService` | C10 | C2 | `saveDraft(...)`, `sign(reportId)`, `getReport(id)`, `getVersions(id)`, `getPatientHistory(patient)` |
-| `IImageService` | C11 | C10 | `openViewer(requestId)` → viewer URL, or a "PACS unavailable" result |
-| `IFeedbackService` | C12 | C2 | `submitIncident(...)`, `getMyIncidents(patient)`, `submitSurvey(requestId, answers)` |
-| `IMetricsService` | C13 | C2 | `physicianMetrics(physician, period)`, `operationalReport(filters)`, `globalStatistics(filters)`, `export(report, format)` |
-| `INotificationService` | C14 | C8, C10, C16 | `notify(patient, type, data)`, `scheduleReminder(appointment)`, `cancelReminder(appointment)`, `sendDueReminders()`, `getInbox(patient)` |
-| `IAuditService` | C15 | all modules that access clinical data | `record(user, action, resource)`, `query(filters)` (there is no update or delete) |
+| Interface | Module | Used by | Main operations (draft) |
+|-----------|--------|---------|-------------------------|
+| `IAuthenticationService` | C1 auth | UI (REST) | `loginWithSso()`, `currentUser()`, `logout()` |
+| `IAuthorizationService` | C1 auth | UI (REST) | `assignRole(user, role)`, `removeRole(user, role)`, `getPermissions(user)` (checks are done by Spring Security) |
+| `IConfigurationService` | C2 configuration | C6, C12 | `getRoomSchedule(room)`, `getAppointmentPolicy()`, `getPriorityLevels()`, `getReminderLeadTime()`, `update(parameter, value)` |
+| `ICatalogueService` | C3 catalogue | C5, C6, C12 | `findTestType(id)`, `listActiveTestTypes()`, `isRequestable(id)`, `getGuides(testType)`, `create/update/deactivate(...)` |
+| `IPatientService` | C4 patient | C5, C6 | `register(data)`, `update(id, data)`, `deactivate(id)`, `findById(id)`, `search(criteria)` |
+| `IRequestService` | C5 request | C6, C7, C8, C14 | `create(...)`, `createFollowUpSeries(...)`, `suspendSeries(id)`, `find(filters)`, `getPendingForScheduling()`, `changePriority(id, priority, justification)`, `markScheduled(id)`, `markUnscheduled(id)`, `markPerformed(id)`, `markReported(id)`, `cancel(id)`, `generateDueFollowUps()`, `getFollowUpCalendar(patient)` |
+| `ISchedulingService` | C6 scheduling | C7, C10 | `findFreeSlots(testType, period)`, `book(requestId, slot)`, `confirm(id)`, `cancel(id)`, `reschedule(id, slot)`, `requestChange(...)`, `resolveChange(id, accepted)`, `getPatientAppointments(patient)`, `getDailyWorklist(date, room/professional)`, `reassign(...)`, `getWaitingList()` |
+| `IExecutionService` | C7 execution | C8 | `registerExecution(appointmentId, data)`, `registerIncident(executionId, incident)`, `getExecution(requestId)` |
+| `IReportService` | C8 report | UI (REST) | `saveDraft(...)`, `sign(reportId)`, `getReport(id)`, `getVersions(id)`, `getPatientHistory(patient)` |
+| `IImageService` | C9 image | C8 | `openViewer(requestId)` → viewer URL, or a "PACS unavailable" result |
+| `IFeedbackService` | C10 feedback | UI (REST) | `submitIncident(...)`, `getMyIncidents(patient)`, `submitSurvey(requestId, answers)` |
+| `IMetricsService` | C11 metrics | UI (REST) | `physicianMetrics(physician, period)`, `operationalReport(filters)`, `globalStatistics(filters)`, `export(report, format)` |
+| `INotificationService` | C12 notification | C6, C8, C14 | `notify(patient, type, data)`, `scheduleReminder(appointment)`, `cancelReminder(appointment)`, `sendDueReminders()`, `getInbox(patient)` |
+| `IAuditService` | C13 audit | C1, C2, C4, C5, C8, C9 | `record(user, action, resource)`, `query(filters)` (there is no update or delete) |
+| `ISsoGateway` | C15 sso-adapter | C1 | `authenticate(token)`, `getCorporateIdentity(token)` |
+| `IHceGateway` | C16 hce-adapter | C4 | `findPatient(identifier)` |
+| `IPacsGateway` | C17 pacs-adapter | C9 | `findStudies(requestId)`, `getViewerUrl(studyUid)` |
 
-### 4.2 Interfaces required by the business layer (implemented by infrastructure)
+## 5. Dependencies between modules
 
-| Interface | Implemented by | Used by |
-|-----------|----------------|---------|
-| `I...Repository` (one per entity: patient, request, appointment, execution, report, test type, user, audit record…) | C17 | each module, only its own repositories. C13 uses read-only query repositories. |
-| `ISsoGateway` | C18 + simulator | C3 |
-| `IHceGateway` | C19 + simulator | C6 |
-| `IPacsGateway` | C20 + simulator | C11 |
-| `IMessageChannel` | C21 | C14 |
+This table is the list of `<dependency>` entries between our modules in each `pom.xml`. A module depends on another one because it uses that module's interface.
 
-## 5. Communication between components
+| Module | Depends on | Interfaces used |
+|--------|------------|-----------------|
+| C1 `radio-auth` | sso-adapter, audit | `ISsoGateway`, `IAuditService` |
+| C2 `radio-configuration` | audit | `IAuditService` |
+| C3 `radio-catalogue` | – | – |
+| C4 `radio-patient` | hce-adapter, audit | `IHceGateway`, `IAuditService` |
+| C5 `radio-request` | patient, catalogue, audit | `IPatientService`, `ICatalogueService`, `IAuditService` |
+| C6 `radio-scheduling` | request, patient, catalogue, configuration, notification | `IRequestService`, `IPatientService`, `ICatalogueService`, `IConfigurationService`, `INotificationService` |
+| C7 `radio-execution` | scheduling, request | `ISchedulingService`, `IRequestService` |
+| C8 `radio-report` | request, execution, image, notification, audit | `IRequestService`, `IExecutionService`, `IImageService`, `INotificationService`, `IAuditService` |
+| C9 `radio-image` | pacs-adapter, audit | `IPacsGateway`, `IAuditService` |
+| C10 `radio-feedback` | scheduling | `ISchedulingService` |
+| C11 `radio-metrics` | – | read-only queries (decision D-06) |
+| C12 `radio-notification` | configuration, catalogue | `IConfigurationService`, `ICatalogueService` |
+| C13 `radio-audit` | – | – |
+| C14 `radio-jobs` | notification, request | `INotificationService`, `IRequestService` |
+| C15–C17 adapters | – | – |
+| `radio-app` | all 17 modules | – |
 
-| From → To | Mechanism |
-|-----------|-----------|
-| UI Client → API | HTTP/JSON (REST). |
-| API → modules | Direct Java calls through the `I...Service` interfaces (dependency injection). |
-| Module → module | Direct calls through the other module's interface. This matches the «include» relations of the use cases (for example, assigning an appointment includes sending a notification). |
-| Job Scheduler → modules | Periodic calls: `INotificationService.sendDueReminders()` and `IRequestService.generateDueFollowUps()`. |
-| Module → database | Through its own repositories (JPA/JDBC, SQL). |
-| Adapters → external systems | SSO: OpenID Connect or SAML (to decide). HCE/admission: FHIR / HL7. PACS: DICOM. Notifications: SMTP / push. |
+**There are no cycles.** Ordering the modules by levels shows it: each module only depends on modules of lower levels. This is also a valid build order.
+
+| Level | Modules |
+|:-----:|---------|
+| 0 | audit, catalogue, metrics, sso-adapter, hce-adapter, pacs-adapter |
+| 1 | auth, configuration, patient, image |
+| 2 | request, notification |
+| 3 | scheduling, jobs |
+| 4 | execution, feedback |
+| 5 | report |
+| 6 | radio-app |
 
 **Rules:**
 
-- Presentation → Business → interfaces ← Infrastructure.
-- There are no cycles between modules. For example, C8 calls C7, but C7 never calls C8.
-- Only C7 changes the request status. The other modules call it: C8 `markScheduled`, C9 `markPerformed`, C10 `markReported`.
-- Permissions are checked on the server, not only in the UI (HU-18).
+- A module only uses the `api` package of another module.
+- No module depends on `radio-app`.
+- The adapters do not depend on any of our modules.
+- Only C5 changes the request status. C6 calls `markScheduled` and `markUnscheduled`, C7 `markPerformed`, and C8 `markReported`.
+- Permissions are checked on the server with Spring Security (HU-18). This is configured in C1, and the other modules use the roles and the current user from Spring Security.
 - Every access to clinical data calls `IAuditService` (CU-38).
-- Integration failures are recorded and **never block the rest of the system** (CU-42). For example, if the PACS is down, the physician can still write the report (HU-25).
+- Integration failures are recorded and never block the rest of the system (CU-42). For example, if the PACS is down, the physician can still write the report (HU-25).
 
-**Request status (C7, from HU-06 and HU-08):**
+## 6. Communication between components
 
-```
-pending appointment → scheduled → performed → reported
-any status before performed → cancelled
-```
+| From → To | Mechanism |
+|-----------|-----------|
+| UI → modules | HTTP/JSON. Each module exposes its own REST api (`/api/...`). |
+| Module → module | Direct Java calls through the other module's `api` interfaces (Spring dependency injection). This matches the «include» relations of the use cases. |
+| Job Scheduler → modules | Periodic calls: `sendDueReminders()` and `generateDueFollowUps()`. |
+| Module → database | JPA, each module with its own tables. |
+| Adapters → external systems | SSO: OpenID Connect or SAML (pending decision). HCE/admission: FHIR/HL7. PACS: DICOM. Notifications: SMTP/push (stub). |
 
 ### Main flow (end to end)
 
-1. A user logs in with the SSO: UI → API → `IAuthenticationService` (C3) → `ISsoGateway`. The role is taken from HU-18.
-2. Admissions registers a patient: `IPatientService` (C6) gets the data with `IHceGateway`. If the HCE fails, the failure is recorded and the data is entered manually.
-3. A physician prescribes a test: `IRequestService.create` (C7), which checks the patient (`IPatientService`) and the test rules (`ICatalogueService`). The request status becomes *pending appointment*.
-4. Admissions assigns an appointment:
-   - `ISchedulingService.book` (C8) only accepts a compatible slot without overlaps (`ICatalogueService`, `IConfigurationService`).
+1. A user logs in with the SSO: C1 → `ISsoGateway`. The role comes from the role matrix of HU-18.
+2. Admissions registers a patient: C4 gets the data with `IHceGateway`. If the HCE fails, the failure is recorded and the data is entered manually.
+3. A physician prescribes a test: C5 checks the patient (`IPatientService`) and the test rules (`ICatalogueService`). The request status becomes *pending appointment*.
+4. Admissions books an appointment:
+   - C6 only accepts a compatible slot without overlaps.
    - Then it calls `IRequestService.markScheduled`.
    - Finally it calls `INotificationService` (notification and reminder).
-5. The patient confirms, cancels or asks to change the appointment (C8). A cancellation frees the slot, and the waiting list proposes the most urgent compatible request (HU-15).
-6. The Job Scheduler (C16) sends the reminders that are due and generates the follow-up requests.
-7. The physician records the exam execution: `IExecutionService` (C9) → `IRequestService.markPerformed`.
+5. The patient confirms, cancels or asks to change the appointment (C6). A cancellation frees the slot, and the waiting list proposes the most urgent compatible request (HU-15).
+6. The Job Scheduler (C14) sends the reminders that are due and generates the follow-up requests.
+7. The physician records the exam execution: C7 → `IRequestService.markPerformed`.
 8. The physician writes and signs the report:
-   - `IReportService` (C10) opens the images with `IImageService` (C11 → `IPacsGateway`).
+   - C8 opens the images with `IImageService` (C9 → `IPacsGateway`).
    - The physician signs; the report becomes a new version that is never overwritten.
-   - Then it calls `IRequestService.markReported` and `INotificationService` (report available).
-9. The patient checks their history and the report: `IReportService.getPatientHistory`, and every access is recorded with `IAuditService`.
+   - Then C8 calls `IRequestService.markReported` and `INotificationService` (report available).
+9. The patient checks their history and the report (C8), and every access is recorded with `IAuditService`.
 
-## 6. Initial component diagram
+## 7. Component diagram
 
 ```mermaid
 flowchart TB
-    subgraph PRES["Presentation layer"]
-        UI["C1 UI Client<br/>one view per role"]
-        API["C2 API / Controllers"]
-    end
+    UI["Web UI - browser<br/>one view per role"]
 
-    subgraph BUS["Business layer - one module per functional area"]
-        AUTH["C3 Identity and Access<br/>IAuthenticationService<br/>IAuthorizationService"]
-        CONF["C4 Configuration<br/>IConfigurationService"]
-        CAT["C5 Test Catalogue and Guides<br/>ICatalogueService"]
-        PAT["C6 Patients<br/>IPatientService"]
-        REQ["C7 Diagnostic Requests<br/>IRequestService"]
-        SCH["C8 Scheduling<br/>ISchedulingService"]
-        EXE["C9 Exam Execution<br/>IExecutionService"]
-        REP["C10 Diagnostic Reports<br/>IReportService"]
-        IMG["C11 Image Access<br/>IImageService"]
-        FBK["C12 Incidents and Surveys<br/>IFeedbackService"]
-        MET["C13 Metrics and Statistics<br/>IMetricsService"]
-    end
-
-    subgraph CROSS["Cross-cutting modules"]
-        NOT["C14 Notifications<br/>INotificationService"]
-        AUD["C15 Audit<br/>IAuditService"]
-        JOB["C16 Job Scheduler<br/>timer"]
-    end
-
-    subgraph INFRA["Infrastructure layer - adapters with simulators"]
-        DBA["C17 Persistence<br/>I...Repository"]
-        SSOA["C18 SSO Adapter<br/>ISsoGateway"]
-        HCEA["C19 HCE / Admission Adapter<br/>IHceGateway"]
-        PACSA["C20 RIS/PACS Adapter<br/>IPacsGateway"]
-        MSGA["C21 Messaging Adapter<br/>IMessageChannel"]
+    subgraph APP["radio-app - one Spring Boot application with 17 component modules"]
+        subgraph BUS["Business modules"]
+            AUTH["C1 radio-auth<br/>IAuthenticationService<br/>IAuthorizationService"]
+            CONF["C2 radio-configuration<br/>IConfigurationService"]
+            CAT["C3 radio-catalogue<br/>ICatalogueService"]
+            PAT["C4 radio-patient<br/>IPatientService"]
+            REQ["C5 radio-request<br/>IRequestService"]
+            SCH["C6 radio-scheduling<br/>ISchedulingService"]
+            EXE["C7 radio-execution<br/>IExecutionService"]
+            REP["C8 radio-report<br/>IReportService"]
+            IMG["C9 radio-image<br/>IImageService"]
+            FBK["C10 radio-feedback<br/>IFeedbackService"]
+            MET["C11 radio-metrics<br/>IMetricsService"]
+        end
+        subgraph CROSS["Cross-cutting modules"]
+            NOT["C12 radio-notification<br/>INotificationService"]
+            AUD["C13 radio-audit<br/>IAuditService"]
+            JOB["C14 radio-jobs<br/>timer"]
+        end
+        subgraph ADP["Integration adapters - each with a simulator"]
+            SSOA["C15 radio-sso-adapter<br/>ISsoGateway"]
+            HCEA["C16 radio-hce-adapter<br/>IHceGateway"]
+            PACSA["C17 radio-pacs-adapter<br/>IPacsGateway"]
+        end
     end
 
     subgraph EXT["External systems"]
@@ -192,147 +197,162 @@ flowchart TB
         MAIL["Email / push service"]
     end
 
-    UI -->|"REST HTTP/JSON"| API
-    API -.->|"I...Service"| BUS
+    UI -->|"REST HTTP/JSON - each module has its own api"| APP
 
     REQ -.->|IPatientService| PAT
     REQ -.->|ICatalogueService| CAT
     SCH -.->|IRequestService| REQ
+    SCH -.->|IPatientService| PAT
     SCH -.->|ICatalogueService| CAT
     SCH -.->|IConfigurationService| CONF
+    SCH -.->|INotificationService| NOT
     EXE -.->|ISchedulingService| SCH
     EXE -.->|IRequestService| REQ
     REP -.->|IRequestService| REQ
+    REP -.->|IExecutionService| EXE
     REP -.->|IImageService| IMG
-    FBK -.->|ISchedulingService| SCH
-
-    SCH -.->|INotificationService| NOT
     REP -.->|INotificationService| NOT
+    FBK -.->|ISchedulingService| SCH
+    NOT -.->|IConfigurationService| CONF
+    NOT -.->|ICatalogueService| CAT
     JOB -.->|INotificationService| NOT
     JOB -.->|IRequestService| REQ
     BUS -.->|IAuditService| AUD
-
-    BUS -.->|"I...Repository"| DBA
     AUTH -.->|ISsoGateway| SSOA
     PAT -.->|IHceGateway| HCEA
     IMG -.->|IPacsGateway| PACSA
-    NOT -.->|IMessageChannel| MSGA
 
-    DBA -->|"JDBC / SQL"| DB
+    APP -->|"JPA - each module its own tables"| DB
     SSOA -->|"OpenID Connect or SAML"| SSO
     HCEA -->|"FHIR / HL7"| HCE
     PACSA -->|DICOM| PACS
-    MSGA -->|"SMTP / push"| MAIL
+    NOT -->|"SMTP / push - stub"| MAIL
 ```
 
-*Dashed arrow = uses the interface named on the arrow. Solid arrow = communication protocol. To keep the diagram readable, some secondary dependencies appear only in table 4.1 (for example, C14 also uses C4 and C5, C8 also uses C6, and C10 also uses C9).*
+*Dashed arrow = Maven dependency: the module uses the interface named on the arrow. Solid arrow = communication protocol. `IAuditService` is used by C1, C2, C4, C5, C8 and C9; the diagram shows it as a single arrow.*
 
-### Suggested mapping to the Maven project (to align with Pablo's structure proposal)
+## 8. Maven project structure
 
-The project is packaged by module:
+The structure has to match Pablo's `pom.xml`.
 
 ```
-src/main/java/.../radiodiagnostics/
-├── auth/  configuration/  catalogue/  patient/  request/  scheduling/
-├── execution/  report/  image/  feedback/  metrics/
-├── notification/  audit/  jobs/
-├── web/       C2 controllers
-└── shared/    common types and exceptions
+radio (parent pom)
+├── radio-auth            ├── radio-feedback
+├── radio-configuration   ├── radio-metrics
+├── radio-catalogue       ├── radio-notification
+├── radio-patient         ├── radio-audit
+├── radio-request         ├── radio-jobs
+├── radio-scheduling      ├── radio-sso-adapter
+├── radio-execution       ├── radio-hce-adapter
+├── radio-report          ├── radio-pacs-adapter
+├── radio-image           └── radio-app   (Spring Boot application, not a component)
 ```
 
-Inside each module there are sub-packages:
+Each module has the same packages inside:
 
-- `api` – the public interface and its DTOs,
-- `domain` – entities and rules,
-- `application` – the service implementation,
-- `infrastructure` – repositories, adapters and simulators.
+```
+<base-package>.<module>.api             public interfaces, DTOs, REST controllers
+<base-package>.<module>.domain          entities and business rules
+<base-package>.<module>.application     implementation of the interfaces
+<base-package>.<module>.infrastructure  repositories (and, in the adapters, the real client and the simulator)
+```
 
-The project starts as a single Maven module and can be split later if needed.
+## 9. Coverage of the user stories and use cases
 
-## 7. Proposed architectural decisions
-
-| ID | Decision | Rationale |
-|----|----------|-----------|
-| AD-01 | Layered modular monolith | Team size, timeline, simple deployment |
-| AD-02 | 13 modules by functional area (not one per user story); they communicate only through interfaces | Cohesion and low coupling; each member can own modules |
-| AD-03 | Each external system behind a replaceable adapter with a simulator | Required by HU-20, HU-21 and HU-24; testable without the real systems |
-| AD-04 | Integration failures are recorded and never block the rest of the system | CU-42, HU-21, HU-24, HU-25 |
-| AD-05 | Only C7 changes the request status | A single source of truth for the request lifecycle (HU-08) |
-| AD-06 | A single notification service with a decoupled channel | HU-02; reused by HU-01, 09, 13 and 26 |
-| AD-07 | Cross-cutting, append-only audit | HU-19, CU-38 (GDPR: health data) |
-| AD-08 | One metrics engine for HU-11, HU-16 and HU-22 | Suggested in the Excel; avoids repeating the same queries three times |
-| AD-09 | Permissions checked on the server and in the UI | HU-18 |
-| AD-10 | Images are not stored, only retrieved from the PACS | HU-24 ("without duplicating them") |
-
-## 8. Questions to discuss with the team
-
-| # | Question | My recommendation |
-|---|----------|-------------------|
-| Q1 | Which is the source of truth for patient data: our system (HU-12) or HCE/admission (HU-21)? (pending in the Excel, goes to `DECISIONS.md`) | HCE/admission when the patient exists there. Our system keeps a local copy and the data HCE does not have. |
-| Q2 | Which SSO protocol (HU-20)? (goes to `DECISIONS.md`) | OpenID Connect: simpler, and easy to simulate |
-| Q3 | Where is the boundary between HU-17 (configuration), HU-23 (catalogue) and HU-15 (priorities)? | Catalogue = attributes of each test type. Configuration = global parameters (schedules, policies, priority levels). The waiting list only uses the priority levels from Configuration. |
-| Q4 | Web app or desktop app? | Web: HU-25 asks for a *web* DICOM viewer and HU-02 for push notifications |
-| Q5 | Spring Boot or plain Java? This affects Pablo's Maven structure. | Spring Boot (dependency injection, JPA, security, scheduled jobs) |
-| Q6 | Which database? | H2 for development and tests, PostgreSQL or MySQL for the demo |
-| Q7 | Direct calls between modules, or events? | Direct calls for now (simpler, and they match the «include» relations of the use cases). Events only if cycles appear. |
-| Q8 | Single Maven module or multi-module? | Single module with one package per component; split later if needed |
-| Q9 | Are there only 4 roles (patient, physician, admissions, administrator)? In the user stories, the physician also records the exam execution (HU-10). | Keep the 4 roles of HU-18 |
-| Q10 | Notification channels: email, push, or only the in-app inbox? | In-app inbox and an email stub first; push later |
-
-## 9. Traceability: user stories → components
+### 9.1 User stories → components
 
 | HU | Name | Components | Block |
 |----|------|------------|:-----:|
-| HU-01 | Manage my appointments | C8, C14 | 2 |
-| HU-02 | Notifications and reminders | C14, C16, C21 | 2 |
-| HU-03 | My test history | C10, C15 | 3 |
-| HU-04 | Incidents and satisfaction surveys | C12 | 4 |
-| HU-05 | Clinical guides and follow-up calendar | C5, C7 | 4 |
-| HU-06 | Prescribe a diagnostic test | C7, C5, C6 | 2 |
-| HU-07 | Periodic follow-up tests | C7, C16 | 3 |
-| HU-08 | Request status and agendas | C7, C8 | 3 |
-| HU-09 | Write, review and sign reports | C10, C14, C15 | 3 |
-| HU-10 | Record exam execution and incidents | C9, C7 | 3 |
-| HU-11 | Physician operational metrics | C13 | 4 |
-| HU-12 | Patient demographic data | C6, C19 | 2 |
-| HU-13 | Assign appointments | C8, C14 | 2 |
-| HU-14 | Daily worklists | C8 | 3 |
-| HU-15 | Waiting lists and priorities | C8, C7, C4 | 3 |
-| HU-16 | Operational reports | C13 | 4 |
-| HU-17 | System parameters | C4, C15 | 1 |
-| HU-18 | Roles and permissions | C3, C2 | 1 |
-| HU-19 | Audit of access to clinical data | C15 | 1 |
-| HU-20 | Corporate SSO | C3, C18 | 1 |
-| HU-21 | HCE and admission integration (FHIR/HL7) | C19, C6 | 2 |
-| HU-22 | Global statistics | C13 | 4 |
-| HU-23 | Test type catalogue | C5 | 1 |
-| HU-24 | RIS/PACS integration (DICOM) | C20, C11 | 3 |
-| HU-25 | DICOM images from the report | C11, C10 | 3 |
-| HU-26 | Reschedule/cancel appointments and change requests | C8, C14 | 2 |
+| HU-01 | Manage my appointments | C6, C12 | 2 |
+| HU-02 | Notifications and reminders | C12, C14 | 2 |
+| HU-03 | My test history | C8, C13 | 3 |
+| HU-04 | Incidents and satisfaction surveys | C10 | 4 |
+| HU-05 | Clinical guides and follow-up calendar | C3, C5 | 4 |
+| HU-06 | Prescribe a diagnostic test | C5, C3, C4 | 2 |
+| HU-07 | Periodic follow-up tests | C5, C14 | 3 |
+| HU-08 | Request status and agendas | C5, C6 | 3 |
+| HU-09 | Write, review and sign reports | C8, C12, C13 | 3 |
+| HU-10 | Record exam execution and incidents | C7, C5 | 3 |
+| HU-11 | Physician operational metrics | C11 | 4 |
+| HU-12 | Patient demographic data | C4, C16 | 2 |
+| HU-13 | Assign appointments | C6, C12 | 2 |
+| HU-14 | Daily worklists | C6 | 3 |
+| HU-15 | Waiting lists and priorities | C6, C5, C2 | 3 |
+| HU-16 | Operational reports | C11 | 4 |
+| HU-17 | System parameters | C2, C13 | 1 |
+| HU-18 | Roles and permissions | C1 | 1 |
+| HU-19 | Audit of access to clinical data | C13 | 1 |
+| HU-20 | Corporate SSO | C1, C15 | 1 |
+| HU-21 | HCE and admission integration (FHIR/HL7) | C16, C4 | 2 |
+| HU-22 | Global statistics | C11 | 4 |
+| HU-23 | Test type catalogue | C3 | 1 |
+| HU-24 | RIS/PACS integration (DICOM) | C17, C9 | 3 |
+| HU-25 | DICOM images from the report | C9, C8 | 3 |
+| HU-26 | Reschedule/cancel appointments and change requests | C6, C12 | 2 |
 
-The "Block" column is the build order suggested in the Excel:
+### 9.2 Use cases → components
 
-1. Cross-cutting base: C3, C4, C5, C15 (+ C18).
-2. Scheduling core: C6, C7, C8, C14, C16 (+ C19, C21).
-3. Execution and reports: C9, C10, C11 (+ C20), plus the worklists and waiting list of C8.
-4. Exploitation and add-ons: C12, C13.
+| Component | Use cases |
+|-----------|-----------|
+| C1 auth | CU-37, CU-40 |
+| C2 configuration | CU-36 |
+| C3 catalogue | CU-11, CU-45 |
+| C4 patient | CU-25, CU-26, CU-27 |
+| C5 request | CU-12, CU-13, CU-14, CU-15, CU-16, CU-17, CU-33 |
+| C6 scheduling | CU-01, CU-02, CU-03, CU-04, CU-18, CU-28, CU-29, CU-30, CU-31, CU-32, CU-34 |
+| C7 execution | CU-22, CU-23 |
+| C8 report | CU-07, CU-08, CU-19, CU-20 |
+| C9 image | CU-21 |
+| C10 feedback | CU-09, CU-10 |
+| C11 metrics | CU-24, CU-35, CU-44 |
+| C12 notification | CU-05, CU-06 |
+| C13 audit | CU-38, CU-39 |
+| C14 jobs | triggers CU-05 (reminders) and CU-16 (future requests) |
+| C15 sso-adapter | CU-40 (secondary actor), CU-42 |
+| C16 hce-adapter | CU-41, CU-42 |
+| C17 pacs-adapter | CU-43, CU-42 |
 
-The architecture lets us build in this order, because each block only depends on components of the same block or of earlier ones.
+**Result:**
 
-## 10. Effort estimation (this task)
+- All 26 user stories and all 45 use cases are covered.
+- Every component covers at least one use case, so none is unnecessary.
+- The block order of the Excel works with the dependency levels of section 5:
+  - block 1 only needs levels 0–1;
+  - block 2 needs patient, request, scheduling, notification and jobs;
+  - block 3 needs execution, report and image;
+  - block 4 needs feedback and metrics.
 
-The "with AI" column uses the team's factor from the Excel (0.5 of the time without AI).
+**Note for the team:** C6 `radio-scheduling` is the biggest module (6 user stories, 11 use cases). If we want to share the work better, we could move the waiting list (HU-15) to its own module. That would make 18 modules. My proposal is to keep it in C6 for now (pending decision P-08).
+
+## 10. Decisions and pending questions
+
+The key decisions (D-01 to D-12) and the pending questions (P-01 to P-08) are recorded in [`DECISIONS.md`](../../DECISIONS.md). The pending questions have to be resolved at the team meeting:
+
+- source of truth for patient data,
+- SSO protocol,
+- boundary between configuration and catalogue,
+- database,
+- UI technology,
+- notification channels,
+- roles,
+- splitting the scheduling module.
+
+## 11. Effort estimation
+
+The "with AI" column uses the team's factor from the Excel (0.5), except for the meeting, which takes the same time with or without AI.
+
+**Task 1 – initial proposal (v0.1–v0.2):** 15 h without AI, 7.5 h with AI.
+
+**Task 2 – review and alignment with the Maven structure (this version):**
 
 | Activity | Without AI (h) | With AI (h) |
 |----------|---------------:|------------:|
-| Analysis of the user stories and use cases | 3 | 1.5 |
-| Identify components and responsibilities | 3 | 1.5 |
-| Interfaces and communication between components | 3 | 1.5 |
-| Component diagram | 2.5 | 1.25 |
-| Writing the document, traceability and questions | 2 | 1 |
-| Team review and adjustments | 1.5 | 0.75 |
-| **Total** | **15** | **7.5** |
+| Review the draft and Pablo's feedback | 1.5 | 0.75 |
+| Confirm the components and align them with the 17 Maven modules | 2.5 | 1.25 |
+| Interfaces and dependencies between modules (check there are no cycles) | 2 | 1 |
+| Coverage check: 26 user stories and 45 use cases | 2.5 | 1.25 |
+| `DECISIONS.md` and pending questions | 1.5 | 0.75 |
+| Meeting to resolve the pending questions | 1.5 | 1.5 |
+| **Total** | **11.5** | **6.5** |
 
-**Estimated saving:** 7.5 h.
-
-**Next step (once the architecture is agreed):** create the package skeleton, the module interfaces and the simulators. This is about 8–10 h without AI and 4–5 h with AI. Everything generated with AI has to be reviewed.
+**Estimated saving:** 5 h.
