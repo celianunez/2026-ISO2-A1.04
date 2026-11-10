@@ -132,7 +132,7 @@ described by that version **plus the list of modules that exist and that changed
 | CFG | It | Version | Modules added (+) or changed (~) | Resulting configuration | Label |
 |---|---|---|---|---|---|
 | **CFG-00** | 0 | `0.1.0` | parent POM, `module-a`, `module-b`, CI, templates | configuration test only | internal · functional baseline · `v0.1.0` |
-| **CFG-01** | 1 | `0.2.0` | + `radio-auth`, `radio-sso-adapter`, `radio-audit`, `radio-configuration`, `radio-catalogue`, `radio-app` | 5 components + app | internal |
+| **CFG-01** | 1 | `0.2.0` | + `radio-auth`, `radio-sso-adapter`, `radio-audit`, `radio-configuration`, `radio-catalogue`, `radio-app`; − `module-a`, `module-b` (configuration test) | 5 components + app | internal |
 | **CFG-02** | 2 | `0.3.0-alpha.1` | + `radio-hce-adapter`, `radio-patient`, `radio-request` | 8 components + app | 🅰 **Alpha 1** |
 | **CFG-03** | 3 | `0.4.0-alpha.2` | + `radio-scheduling`, `radio-notification`, `radio-jobs` | 11 components + app | 🅰 **Alpha 2** · architecture baseline |
 | **CFG-04** | 4 | `0.5.0` | + `radio-execution`, `radio-report`, `radio-image`, `radio-pacs-adapter` | 15 components + app | internal (beta in progress) |
