@@ -1,6 +1,6 @@
 ---
 name: Tarea
-about: Describe this issue template's purpose here.
+about: Tarea, funcionalidad o refactorización vinculada a una rama feature/<issue-id>-<nombre>
 title: ''
 labels: ''
 assignees: ''
@@ -25,7 +25,7 @@ assignees: ''
 
 ## Contratos e Interfaces
 - **Interfaces a implementar / modificar:**
-  - `[Nombre de la interfaz o API, e.g., REST Endpoint, Interfaz/Clase C#]`
+  - `[Nombre de la interfaz o API, e.g., REST Endpoint, Interfaz/Clase Java]`
 - **Contratos (Entradas / Salidas / Pre-Post condiciones):**
   - **Entrada:** `[Parámetros, DTOs o datos esperados]`
   - **Salida:** `[Respuesta, retorno o cambio de estado]`

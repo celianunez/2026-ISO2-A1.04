@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>es.uclm.sescam</groupId>
+        <artifactId>sescam-parent</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>module-b</artifactId>
+    <name>SESCAM Radiodiagnostics - module B</name>
+
+    <dependencies>
+        <!-- module-b uses only the api package of module-a. -->
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>module-a</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Architecture rules (D-14). Lives here because module-b sees module-a on its classpath;
+             it moves to radio-app, which depends on every module, in Iteration 1 (D-19). -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
