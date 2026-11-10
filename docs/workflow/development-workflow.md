@@ -4,10 +4,10 @@
 |---|---|
 | **Group** | ISO II – 3A1.04 (team of 6) |
 | **Owner** | David Villanueva |
-| **Status** | Draft v0.2 – reviewed, to be confirmed at the team meeting |
-| **Date** | 05/11/2026 |
+| **Status** | Draft v0.3 – reviewed, to be confirmed at the team meeting |
+| **Date** | 10/11/2026 |
 | **Source** | `Development Workflow and Configuration Plan – SESCAM Radiodiagnostics.pdf` (v0.1) |
-| **Related** | [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (operational rules), `quality-testing-strategy.md`, `DECISIONS.md` |
+| **Related** | [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (operational rules), [`quality-testing-strategy.md`](../../quality-testing-strategy.md), [`DECISIONS.md`](../../DECISIONS.md), [`scm-plan.md`](../plans/scm-plan.md), [`sqa-plan.md`](../plans/sqa-plan.md) |
 
 ## History
 
@@ -15,6 +15,7 @@
 |---|---|---|---|
 | v0.1 | 27/10/2026 | D. Villanueva | First draft (PDF). |
 | v0.2 | 05/11/2026 | D. Villanueva | Converted to Markdown. Review against the current repository state, the architecture proposal v0.3 (PR #11) and the quality strategy. Branch, commit and PR rules moved to `CONTRIBUTING.md`. Configuration test skeleton implemented (§5). |
+| v0.3 | 10/11/2026 | D. Villanueva | Architecture checks added to the skeleton (enforcer, JaCoCo `check`, `ArchitectureTest`, D-14). R-06 and R-12 resolved by D-15 and D-20; open items updated. |
 
 ## 1. Purpose and scope
 
@@ -152,7 +153,7 @@ repo/
 
 ### 4.4 Continuous integration
 
-A GitHub Actions workflow builds and tests every PR into `develop` and `main` with `mvn -B verify`, and publishes the Surefire and JaCoCo reports (`quality-testing-strategy.md` §3). It becomes a required status check once it has run once. Implemented in `.github/workflows/ci.yml` (§5.1); *threshold and required check to be agreed with the quality owner.*
+A GitHub Actions workflow builds and tests every PR into `develop` and `main` with `mvn -B verify`, and publishes the Surefire and JaCoCo reports (`quality-testing-strategy.md` §3). It becomes a required status check once it has run once. Implemented in `.github/workflows/ci.yml` (§5.1). `mvn -B verify` also runs the enforcer, the architecture rules and the coverage check, whose thresholds grow per release (`sqa-plan.md` §5.2.1, D-17); *the required check is enabled by the admin.*
 
 ## 5. Small configuration test
 
@@ -162,9 +163,9 @@ The test in v0.1 §5 stays valid: a parent POM, `module-a` exposing an interface
 
 | Item | File | Content |
 |---|---|---|
-| Parent POM | `pom.xml` | `es.uclm.sescam:sescam-parent:0.1.0-SNAPSHOT`, packaging `pom`, Java 17 (`maven.compiler.release`), JUnit BOM 5.10.2, pinned compiler/surefire/JaCoCo plugin versions, JaCoCo report in `verify` (report only, no threshold). |
+| Parent POM | `pom.xml` | `es.uclm.sescam:sescam-parent:0.1.0-SNAPSHOT`, packaging `pom`, Java 17 (`maven.compiler.release`), JUnit BOM 5.10.2, ArchUnit 1.3.0, pinned compiler/surefire/JaCoCo/enforcer plugin versions. In `verify`: enforcer (Java ≥ 17, Maven ≥ 3.8), JaCoCo report and JaCoCo `check` with the properties `coverage.line.minimum` / `coverage.branch.minimum` (0.00 = report only in Iteration 0, D-17). |
 | Module A | `module-a/` | Interface `es.uclm.sescam.modulea.api.Greeter` and its implementation in `...modulea.internal.DefaultGreeter`. Tests: normal flow and exception flow (null/blank name). |
-| Module B | `module-b/` | `es.uclm.sescam.moduleb.Welcome` receives a `Greeter` and imports only `...modulea.api`. Its test uses a stub of the interface, not the real implementation. |
+| Module B | `module-b/` | `es.uclm.sescam.moduleb.Welcome` receives a `Greeter` and imports only `...modulea.api`. Its test uses a stub of the interface, not the real implementation. `es.uclm.sescam.architecture.ArchitectureTest` (ArchUnit) fails if a module uses another module outside its `api` package or if there is a cycle between modules (D-14); it moves to `radio-app` in Iteration 1. |
 | CI | `.github/workflows/ci.yml` | Job `build`: Temurin 17, Maven cache, `mvn -B verify`, uploads Surefire and JaCoCo reports as the `test-reports` artifact (also when the build fails). |
 | Ignore rules | `.gitignore` | `target/` and Eclipse, IntelliJ and VS Code files. |
 
@@ -176,7 +177,8 @@ Module names are generic on purpose. They will be replaced by the `radio-*` modu
 |---|---|
 | `mvn -B verify` | BUILD SUCCESS, 6 tests (4 in module A, 2 in module B), 0 failures |
 | JaCoCo report | Generated in `module-a/target/site/jacoco/` and `module-b/target/site/jacoco/` |
-| Module boundary | `module-b` only imports `es.uclm.sescam.modulea.api.Greeter` |
+| Module boundary | `module-b` only imports `es.uclm.sescam.modulea.api.Greeter`; checked by `ArchitectureTest` |
+| Architecture checks (10/11/2026) | BUILD SUCCESS with enforcer, `ArchitectureTest` (2 rules) and JaCoCo `check`. Negative tests: making `Welcome` use `modulea.internal.DefaultGreeter` fails the build with an *Architecture Violation*; `-Dcoverage.line.minimum=1.01` fails the build with *Coverage checks have not been met* |
 | Negative test (local) | A broken assertion makes `mvn -B verify` fail (exit code 1) |
 | CI on GitHub | *Pending: runs on the first PR into `develop`* |
 
@@ -199,13 +201,13 @@ These need the admin and other members (v0.1 §5.7, steps 2 to 10):
 | R-03 | Many commits are "Add files via upload" (web uploads). | No meaningful history; no link with issues. | Commit rules in `CONTRIBUTING.md` §2. When uploading through the web, edit the commit message. |
 | R-04 | Existing branches (`development-workflow`, `Project-Structure`, `alejandroacena7546-patch-1`, `feature/HDU-file`) do not follow `feature/<issue-id>-<short-name>`. | Branches cannot be traced to issues. | Keep them until merged; new branches follow the convention. |
 | R-05 | v0.1 lists the Java version as open, while D-04 (PR #11) proposes Java 17, Spring Boot 3.5.16 and JUnit 5. | Two documents could disagree. | Reference D-04; do not decide the stack here. |
-| R-06 | v0.1 uses `es.uclm.sescam` and `module-a/b`, while D-13 uses `radio-*` names. | Naming mismatch. | Open point: agree on `groupId` together with D-13. |
+| R-06 | v0.1 uses `es.uclm.sescam` and `module-a/b`, while D-13 uses `radio-*` names. | Naming mismatch. | **Resolved:** `groupId` `es.uclm.sescam` and packages `es.uclm.sescam.<component>.{api,domain,application,infrastructure}` (D-13, D-20); `module-a/b` stay only as the configuration test until the first `radio-*` modules (Iteration 1). |
 | R-07 | v0.1 has its own PR checklist, different from section 4 of `quality-testing-strategy.md`. | Two lists of review criteria. | One checklist: the quality strategy one, in `.github/pull_request_template.md`. |
 | R-08 | v0.1 does not mention JaCoCo, which the quality strategy requires in CI. | CI would not produce the coverage baseline. | Add it to the configuration test (§5). |
 | R-09 | All merge methods are enabled and branches are not deleted after merge. | Inconsistent history and stale branches. | Squash for features, merge commit for release/hotfix; enable "Automatically delete head branches". |
 | R-10 | The issue template mentions C# and has a placeholder `about:` text. | Confusing for a Java project. | Fixed in this version. |
 | R-11 | The suggested labels do not exist. | Issues cannot be classified by type or iteration. | Admin creates the labels in `CONTRIBUTING.md` §5. |
-| R-12 | v0.1 says one SemVer version and changelog per Maven module. With 18 modules this is a lot of overhead. | Release work for a team of 6. | Open point for the SCM plan: one version for the whole repository until the modules are stable. |
+| R-12 | v0.1 says one SemVer version and changelog per Maven module. With 18 modules this is a lot of overhead. | Release work for a team of 6. | **Resolved by D-15** (`scm-plan.md` §4.1): one version for the whole repository until `1.0.0`, plus one identified configuration per iteration (`scm-plan.md` §3.1.4). |
 | R-13 | The AI agent is fixed as OpenCode in v0.1. | Members may use other tools; the issue template lists Copilot, ChatGPT, Claude. | Open point: agree on the tool, or on the rules only (`AGENTS.md`), whatever tool is used. |
 
 ## 7. Proposed decisions for `DECISIONS.md`
@@ -226,8 +228,9 @@ To be added after PR #11 is merged (to avoid conflicts), with the next free IDs:
 | Item | Status | Note |
 |---|---|---|
 | Java version / framework | See D-04 | Java 17, Spring Boot 3.5.16, JUnit 5 (to confirm) |
-| `groupId` and module names | Open | Together with D-13 |
-| Versioning per repository or per module | Open | R-12, SCM plan |
+| `groupId` and module names | Resolved | D-13, D-20 |
+| Versioning per repository or per module | Resolved | D-15: one version per repository; CFG map in `scm-plan.md` §3.1.4 |
+| Architecture checks | Resolved | D-14: ArchUnit + enforcer in `mvn -B verify` |
 | AI agent tool | Open | R-13 |
 | Azure (cloud hosting) | Open | Optional for Transition; fictitious data only |
 | Client type (web, desktop) | See P-05 | – |

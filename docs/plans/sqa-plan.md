@@ -4,8 +4,8 @@
 |---|---|
 | **Group** | ISO II – 3A1.04 (team of 6) |
 | **Owner** | George (quality and test lead), with the whole team |
-| **Status** | Draft v0.1 – to be validated at the team meeting |
-| **Date** | 06/11/2026 |
+| **Status** | Draft v0.2 – to be validated at the team meeting |
+| **Date** | 10/11/2026 |
 | **Structure** | IEEE 730 (Software Quality Assurance), product quality model ISO/IEC 25010 |
 | **Related** | [`quality-testing-strategy.md`](../../quality-testing-strategy.md) (test strategy), [`project-plan.md`](project-plan.md), [`scm-plan.md`](scm-plan.md), [`CONTRIBUTING.md`](../../CONTRIBUTING.md), `DECISIONS.md` |
 
@@ -14,6 +14,7 @@
 | Version | Date | Author | Change |
 |---|---|---|---|
 | v0.1 | 06/11/2026 | D. Villanueva | First version. Builds on `quality-testing-strategy.md`: justifies the characteristics for the healthcare domain, turns them into measurable targets and adds the inspection, control and improvement procedures. |
+| v0.2 | 10/11/2026 | D. Villanueva | Adds the impact of the quality characteristics on each component (§3.3) and on each user story (§3.4), quality gates that grow with each release (§5.2.1, D-17) and the automatic architecture checks (ArchUnit and enforcer, D-14). |
 
 ---
 
@@ -76,6 +77,71 @@ The system handles **health data** of patients (GDPR art. 9 special category), s
 
 Not prioritising usability, performance and portability is a **conscious decision**, recorded in `DECISIONS.md`, not an omission: with a fixed delivery date, effort goes to the characteristics whose failure would harm a patient or break the law.
 
+### 3.3 Impact on each component
+
+Each component (Maven module, D-13) is where its quality requirements are guaranteed: inside the
+module and at its `api` boundary. Abbreviations: **FS** functional suitability · **SEC** security ·
+**REL** reliability · **COM** compatibility · **MAI** maintainability · **USA** usability.
+Two rules apply to **every** module and are not repeated in the table: it is used by other modules
+only through its `api` package and has no cycles (MAI, checked by `ArchitectureTest`, D-14), and its
+REST endpoints check permissions on the server (SEC, HU-18).
+
+| Module (CFG where it appears) | Critical characteristics | Verifiable quality requirement | How it is verified |
+|---|---|---|---|
+| `radio-auth` (CFG-01) | SEC confidentiality, authenticity · FS correctness | Deny by default: an action not in the role matrix is rejected; the role comes from the corporate identity; the 4 roles of HU-18 and nothing else | Parameterised test of the role × action matrix; one forbidden-role test per endpoint; test with missing/expired session |
+| `radio-sso-adapter` (CFG-01) | COM interoperability · REL fault tolerance | Same `ISsoGateway` for simulator and real adapter; SSO down ⇒ clear error, no partial session | Contract test of `ISsoGateway`; simulator failure test (timeout, invalid token) |
+| `radio-audit` (CFG-01) | SEC accountability, integrity | Append-only: no update or delete operation exists; every record has user, date, action and resource | Test that the `api` has no update/delete; test that a record cannot be modified; query by user/resource/period |
+| `radio-configuration` (CFG-01) | FS correctness · SEC accountability | A parameter change applies only to future appointments; every change is audited | Test with an existing appointment after a change; test that the change creates an audit record |
+| `radio-catalogue` (CFG-01, ~06) | FS completeness · SEC integrity | Test types have all mandatory attributes; a type in use is deactivated, never deleted; changes audited (P-12) | Validation test per attribute; test "deactivate type in use"; audit test |
+| `radio-app` (CFG-01 → 07) | REL availability · MAI modularity · USA error protection | Starts with each profile (simulators/real); no business logic; UI validates input and asks for confirmation on destructive actions | Smoke test of start-up in every configuration; ArchUnit (no domain code in the app); UI walkthrough per role (beta, final) |
+| `radio-hce-adapter` (CFG-02) | COM interoperability (FHIR/HL7) · REL fault tolerance | Patient data mapped from the FHIR structure; HCE down ⇒ the failure is recorded and admissions continues manually (CU-42) | Round-trip mapping test; simulator failure test (timeout, error, unavailable) |
+| `radio-patient` (CFG-02) | FS correctness · SEC confidentiality, accountability | No duplicate patients; deactivation is logical; every read of patient data is audited | Duplicate test; logical deactivation test; audit-on-read test |
+| `radio-request` (CFG-02, ~05, ~06) | FS correctness · SEC integrity · MAI testability | **Only this module changes the request status** (D-07); illegal transitions rejected; priority kept; follow-up series generated once (idempotent) | State × action table test; test of each illegal transition; follow-up generation run twice with a fixed clock |
+| `radio-scheduling` (CFG-03, ~05) | FS correctness · REL fault tolerance · USA error protection | **Never two appointments in the same slot**; reschedule follows the same rules; waiting list ordered by priority, deterministically | Concurrency test (two bookings, same slot ⇒ one wins); overlap/compatibility tests; waiting-list ordering table |
+| `radio-notification` (CFG-03) | REL fault tolerance · SEC confidentiality | A failing channel never blocks the business action; notices contain no clinical data; no duplicate reminders | Channel-down test (action succeeds, failure recorded); content test without clinical data; duplicate-reminder test |
+| `radio-jobs` (CFG-03, ~05) | REL recoverability · MAI testability | Running a job twice produces no duplicates; jobs use an adjustable clock | Job run twice with a fixed clock; test after an interrupted run |
+| `radio-execution` (CFG-04) | FS completeness · SEC accountability | Execution data complete; marks the request as performed only through `IRequestService` | Validation test; test that the status changes through `radio-request` |
+| `radio-report` (CFG-04, ~05) | SEC integrity (Law 41/2002), accountability · FS correctness | A **signed report is never overwritten**: a change creates a new version; every access to a report is audited | Test "update of a signed report ⇒ new version"; version history test; audit test |
+| `radio-image` (CFG-04) | REL fault tolerance · SEC confidentiality | PACS down ⇒ clear message and the report can still be written (HU-25); image access policy applied | PACS-down test; forbidden-role test on images |
+| `radio-pacs-adapter` (CFG-04) | COM interoperability (DICOM) · REL fault tolerance | Images are never copied (HU-24); same `IPacsGateway` for simulator and real adapter | Contract test; test that no image is stored; simulator failure test |
+| `radio-feedback` (CFG-06) | FS correctness · SEC confidentiality | One survey per completed test; a patient sees only their own incidents | Second-survey test ⇒ rejected; cross-patient access test |
+| `radio-metrics` (CFG-06) | FS correctness · SEC confidentiality | Figures match the seed data; read-only (D-06); no identifiable patient data in reports | Tests with a known dataset (oracle); test that it has no write repositories; content test without personal data |
+
+### 3.4 Impact on each user story
+
+The column *quality requirement* goes into the issue of the story as acceptance criteria. Every
+story also inherits the two cross-cutting rules of §3.3 (permissions on the server and audit of
+clinical data), which are not repeated.
+
+| Story · iteration · module | Critical characteristics | Verifiable quality requirement | Verification |
+|---|---|---|---|
+| **HU-18** roles and permissions · It1 · auth | SEC confidentiality · FS correctness | Deny by default; role matrix as data, not scattered `if`s | Role × action parameterised test; forbidden-role test per endpoint |
+| **HU-20** SSO login · It1 · auth + sso-adapter | SEC authenticity · REL fault tolerance | No access without a valid session; SSO down ⇒ clear error | Missing/expired session tests; SSO simulator failure |
+| **HU-19** audit · It1 · audit | SEC accountability, integrity | Every clinical access recorded; records immutable; query only for administrators | Audit-on-access tests; no update/delete test; forbidden-role test on the query |
+| **HU-17** system parameters · It1 · configuration | FS correctness · SEC accountability | Changes apply to future appointments only; audited | Test with an existing appointment; audit test |
+| **HU-23** test catalogue · It1 · catalogue | FS completeness · SEC integrity | All attributes validated; a type in use is only deactivated | Validation tests; deactivate-in-use test |
+| **HU-21** HCE / admission · It2 · hce-adapter + patient | COM interoperability · REL fault tolerance | FHIR mapping correct; HCE down never blocks admissions (CU-42) | Round-trip mapping; simulator timeout/error tests |
+| **HU-12** patient data · It2 · patient | FS correctness · SEC confidentiality | No duplicates; logical deactivation; reads audited | Duplicate test; deactivation test; audit test |
+| **HU-06** prescribe a test · It2 · request | FS correctness, completeness · SEC accountability | Mandatory fields and priority validated; requestable test types only; author recorded | Validation test per field; non-requestable type test; author test |
+| **HU-13** assign appointments · It3 · scheduling | FS correctness · REL fault tolerance | Never two appointments in the same slot; only compatible slots | Concurrency test; compatibility test |
+| **HU-01** manage my appointments · It3 · scheduling | SEC confidentiality · USA error protection | A patient acts only on their own appointments and in valid states; cancel asks for confirmation | Other patient's appointment ⇒ forbidden; state × action table |
+| **HU-26** reschedule / cancel / change requests · It3 · scheduling | FS correctness · SEC accountability | Same rules as HU-13; cancellation frees the slot; every change attributed | Overlap test on reschedule; freed-slot test; audit test |
+| **HU-02** notifications · It3 · notification + jobs | REL fault tolerance · SEC confidentiality | Channel failure never blocks the action; no clinical data in the notice; no duplicates | Channel-down test; content test; duplicate test |
+| **HU-10** exam execution · It4 · execution | FS completeness · SEC accountability | Execution data complete; request marked as performed through `radio-request` | Validation test; status-change test |
+| **HU-09** reports · It4 · report | SEC integrity, accountability · FS correctness | Signed report never overwritten; signing notifies the patient | New-version test; notification test |
+| **HU-24** RIS/PACS · It4 · pacs-adapter | COM interoperability · REL fault tolerance | DICOM contract respected; images never copied; PACS down handled | Contract test; no-copy test; simulator failure |
+| **HU-25** DICOM images · It4 · image | REL fault tolerance · SEC confidentiality | Report available with the PACS down; access policy applied; access audited | PACS-down test; forbidden-role test; audit test |
+| **HU-07** follow-up tests · It5 · request + jobs | FS correctness · REL recoverability | Follow-up series generated on the right dates and only once | Fixed-clock test; run-twice test; suspended-series test |
+| **HU-08** request status and agendas · It5 · request + scheduling | FS completeness · SEC confidentiality | Real lifecycle states; a physician sees only their own requests | Lifecycle test; cross-physician access test |
+| **HU-14** daily worklists · It5 · scheduling | FS correctness · USA operability | Worklist matches the booked appointments of the day/room | Test with seed data |
+| **HU-15** waiting lists and priorities · It5 · scheduling + request | FS correctness · SEC accountability | Deterministic order by priority and date; priority changes justified and audited | Ordering table test; justification + audit test |
+| **HU-03** test history · It5 · report | FS completeness · SEC confidentiality | Complete history, read-only; only the patient (and authorised staff) sees it; access audited | Seed-data test; cross-patient test; audit test |
+| **HU-04** incidents and surveys · It6 · feedback | FS correctness · SEC confidentiality | One survey per completed test; own incidents only | Second-survey test; cross-patient test |
+| **HU-05** clinical guides and follow-ups · It6 · catalogue + request | FS correctness | The follow-up calendar matches the series of HU-07 | Shared fixed-clock tests with HU-07 |
+| **HU-11** physician metrics · It6 · metrics | FS correctness · SEC confidentiality | Figures match the data; only the physician's own requests | Oracle dataset test; cross-physician test |
+| **HU-16** operational reports · It6 · metrics | FS correctness · USA operability | Documented formulas (occupancy, waiting, cancellations); export | Oracle dataset test; export test |
+| **HU-22** global statistics · It6 · metrics | FS correctness · SEC confidentiality | Totals match; no identifiable personal data | Oracle dataset test; content test |
+
 ## 4. Measurable quality requirements
 
 Each characteristic is turned into metrics with a target. A metric without a target or without a way of measuring it is not used.
@@ -90,8 +156,8 @@ Each characteristic is turned into metrics with a target. A metric without a tar
 | Security | Signed reports that can be modified | **0** | Test: an update of a signed report is rejected and creates a new version | It 4 and regression |
 | Reliability | External-system failure scenarios handled without blocking (timeout, error, unavailable) | **100 %** of the adapters | Simulator failure tests per adapter | Every PR on an adapter |
 | Compatibility | Contract tests for each `api` and each adapter | **≥ 1 per public interface** | Contract tests in the consumer module | Every PR changing an `api` |
-| Maintainability | Line coverage on `domain` and `application` code | **≥ 70 %** (report-only in It 0; confirmed after It 1) | JaCoCo report in CI | Every build |
-| Maintainability | Dependency cycles / imports of another module's internals | **0** | Build rule (ArchUnit or Maven enforcer, D-05) + review | Every build |
+| Maintainability | Line / branch coverage on `domain` and `application` code | **Grows per release**: report-only in It 0 → line ≥ 70 % / branch ≥ 55 % at the beta → ≥ 75 % / 60 % at the final (§5.2.1) | JaCoCo `check` in CI with the thresholds of the parent POM (D-17) | Every build |
+| Maintainability | Dependency cycles / imports of another module's internals | **0** | `ArchitectureTest` (ArchUnit) in `mvn -B verify` (D-05, D-14) | Every build |
 | Maintainability | PR size | ≤ ~400 changed lines, one issue | Review | Every PR |
 | Process | PRs merged with red CI or self-approved | **0** | Branch protection + Insights | Weekly |
 
@@ -132,13 +198,37 @@ A member other than the author reviews: role checks on every new endpoint, audit
 
 #### 5.2.1 Quality gates
 
+Gates on **every change**:
+
 | Gate | Where | Rule |
 |---|---|---|
-| G1 – Build and tests | CI on every PR | `mvn -B verify` must pass; a red build cannot be merged (required check) |
+| G1 – Build and tests | CI on every PR | `mvn -B verify` must pass (tests, enforcer, `ArchitectureTest`, JaCoCo `check`); a red build cannot be merged (required check) |
 | G2 – Review | Branch protection | 1 approval by someone other than the author |
-| G3 – Coverage | CI report | Below the threshold → the reviewer requests tests (blocking from It 2 once the threshold is confirmed) |
+| G3 – Coverage | CI (`jacoco:check`) | Below the threshold of the current release gate (table below) the build fails |
 | G4 – Definition of Done | End of iteration | All items of the DoD (`CONTRIBUTING.md` §4) met for every issue of the iteration |
-| G5 – Release audit | Release PR | FCA/PCA of [`scm-plan.md` §3.4](scm-plan.md) passed; 0 open critical/major defects |
+| G5 – Release audit | Release PR | FCA/PCA of [`scm-plan.md` §3.4](scm-plan.md) passed and the release gate below met |
+
+Gates **per release** (D-17). The thresholds grow with the product: early configurations protect the
+architecture, later ones the completeness and the recoverability. The coverage values are the
+properties `coverage.line.minimum` / `coverage.branch.minimum` of the parent POM, raised on each
+`release/*` branch ([`scm-plan.md` §4.3](scm-plan.md)); internal configurations keep the value of the last release.
+
+| Gate | CFG-00 `v0.1.0` | CFG-02 Alpha 1 | CFG-03 Alpha 2 | CFG-06 Beta | CFG-07 RC | CFG-07 Final |
+|---|---|---|---|---|---|---|
+| Line coverage, `domain` + `application` | report only | ≥ 50 % | ≥ 60 % | ≥ 70 % | ≥ 75 % | ≥ 75 % |
+| Branch coverage, `domain` + `application` | report only | ≥ 40 % | ≥ 45 % | ≥ 55 % | ≥ 60 % | ≥ 60 % |
+| Failing tests · ArchUnit violations · enforcer failures | 0 | 0 | 0 | 0 | 0 | 0 |
+| Use-case flows of the delivered stories with an acceptance test | – | 100 % | 100 % | 100 % | 100 % | 100 % |
+| Traceability HU → CU → test (stories) | 0 / 26 | 8 / 26 | 12 / 26 | 26 / 26 | 26 / 26 | 26 / 26 |
+| Endpoints with a forbidden-role test · clinical accesses audited | – | 100 % | 100 % | 100 % | 100 % | 100 % |
+| Contract tests (≥ 1 per public `api` and adapter) | – | 100 % | 100 % | 100 % | 100 % | 100 % |
+| Adapter failure tests (simulator failing) | – | SSO, HCE | SSO, HCE | all (SSO, HCE, PACS) | all | all |
+| Open defects | – | 0 critical | 0 critical | 0 critical, 0 major | 0 critical, 0 major | 0 critical, 0 major |
+| Database restore rehearsal | – | – | – | 1 rehearsal | 1 rehearsal | documented |
+| Walkthrough with the roles (usability, error protection) | – | 1 role | 2 roles | 4 roles | 4 roles | 4 roles + user guide |
+
+If a configuration does not pass its gate, the label is not given (D-16): the gate is never lowered
+to fit the date; the scope is cut instead ([`project-plan.md` §8](project-plan.md)).
 
 #### 5.2.2 Phase entry and exit criteria
 
@@ -176,12 +266,12 @@ Each defect fix includes a test that reproduces it (regression).
 |---|---|---|
 | W44 | 0 | Requirements inspection; this plan agreed; configuration audit of `v0.1.0` |
 | W45 | 1 | Design/contract inspection of block 1; first coverage report; security review (roles, SSO, audit) |
-| W46 | 2 | **Security design review**; contract inspection of the HCE adapter; coverage threshold confirmed |
-| W47 | 3 | Design inspection of the booking core; **Elaboration exit review** + audit of `v0.4.0` |
+| W46 | 2 | **Security design review**; contract inspection of the HCE adapter; **Alpha 1 gate** (CFG-02) |
+| W47 | 3 | Design inspection of the booking core; **Elaboration exit review** + **Alpha 2 gate** and audit of `v0.4.0-alpha.2` |
 | W48 | 4 | Security review of reports and images (signed-report integrity) |
 | W49 | 5 | Quality review; regression of blocks 1–3 |
-| W50 | 6 | **Construction exit review** + audit of `v0.7.0` |
-| W51 | 7 | Full regression; **final quality audit**; lessons learned |
+| W50 | 6 | **Construction exit review** + **Beta gate** and audit of `v0.7.0-beta.1` |
+| W51 | 7 | Full regression; **RC gate** (`v1.0.0-rc.1`); **final quality audit** (`v1.0.0`); lessons learned |
 
 PR inspections and the quality gates run continuously in every week.
 
@@ -216,7 +306,7 @@ Tests are designed by people from the acceptance criteria; the AI agent may scaf
 | GitHub Actions | Build, tests, coverage | Surefire and JaCoCo reports attached to every build |
 | JUnit 5 | Unit, acceptance, contract and fault-injection tests | Test results in CI |
 | JaCoCo | Coverage | Coverage report per build |
-| ArchUnit or Maven enforcer (to confirm, D-05) | Module boundaries and cycles | Build result |
+| ArchUnit (`ArchitectureTest`) and Maven enforcer (D-14) | Module boundaries, cycles, Java/Maven versions | Build result |
 | GitHub secret scanning | Secrets in the repository | Alerts |
 | GitHub PRs and Issues | Reviews and defects | Comments, approvals, issue history |
 | Wiki | Quality report (page 08), iteration pages, minutes | Wiki history |

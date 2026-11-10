@@ -4,15 +4,16 @@
 |---|---|
 | **Group** | ISO II – 3A1.04 (team of 6) |
 | **Owner** | Coordinator (Carlos), with the whole team |
-| **Status** | Draft v0.1 – to be validated at the team meeting |
-| **Date** | 06/11/2026 |
-| **Related** | [`scm-plan.md`](scm-plan.md), [`sqa-plan.md`](sqa-plan.md), [`development-workflow.md`](../workflow/development-workflow.md), `architecture-proposal.md`, `DECISIONS.md`, `historias_de_usuario_SESCAM_v2.xlsx`, wiki pages 03, 04 and 07 |
+| **Status** | Draft v0.2 – to be validated at the team meeting |
+| **Date** | 10/11/2026 |
+| **Related** | [`scm-plan.md`](scm-plan.md), [`sqa-plan.md`](sqa-plan.md), [`development-workflow.md`](../workflow/development-workflow.md), [`architecture-proposal.md`](../architecture/architecture-proposal.md), [`DECISIONS.md`](../../DECISIONS.md), `historias_de_usuario_SESCAM_v2.xlsx` (repository root), wiki pages 03, 04 and 07 |
 
 ## History
 
 | Version | Date | Author | Change |
 |---|---|---|---|
 | v0.1 | 06/11/2026 | D. Villanueva | First draft. Consolidates the estimates of the user stories spreadsheet, the 8 block-based iterations of the wiki and the architecture decisions D-01…D-13, and adds the justification of every trade-off. |
+| v0.2 | 10/11/2026 | D. Villanueva | Milestones linked to the configurations and release labels of the SCM plan (alpha 1, alpha 2, beta, release candidate, final; D-15, D-16) and to the quality gates per release of the SQA plan (D-17). The 8 iterations are recorded as decision D-21. |
 
 ---
 
@@ -64,11 +65,15 @@ Because the team is small, everybody also programs and tests: each member owns t
 | Phase | Iterations | Weeks | Exit criterion (milestone) | Date |
 |---|---|---|---|---|
 | **Inception** | 0 | W44 | Requirements v2 and use cases agreed; plan, workflow and CI in place; configuration test passed | 01/11/2026 |
-| **Elaboration** (alpha) | 1–3 | W45–W47 | **Architecture baseline**: contracts frozen, security and audit working, the booking core works end to end (prescribe → book → notify) | 22/11/2026 |
-| **Construction** (beta) | 4–6 | W48–W50 | **Initial operational capability**: every story delivered and tested; full path from prescription to signed report | 13/12/2026 |
-| **Transition** | 7 | W51 | **Product release `v1.0.0`**: integrated tagged build, wiki complete, self-assessment | 15/12/2026 |
+| **Elaboration** (alpha) | 1–3 | W45–W47 | **Alpha 1** at the end of It 2 (`v0.3.0-alpha.1`, 15/11/2026: login → patient → prescription end to end). **Architecture baseline = Alpha 2** (`v0.4.0-alpha.2`): contracts frozen, security and audit working, the booking core works end to end (prescribe → book → notify) | 22/11/2026 |
+| **Construction** (beta) | 4–6 | W48–W50 | **Initial operational capability = Beta** (`v0.7.0-beta.1`): every story delivered and tested; full path from prescription to signed report | 13/12/2026 |
+| **Transition** | 7 | W51 | **Release candidate** `v1.0.0-rc.1` (14/12) → **product release `v1.0.0`**: integrated tagged build, wiki complete, self-assessment | 15/12/2026 |
 
 External fixed dates: **theory report on 13/11/2026** (W46) and **practical delivery on 15/12/2026** (W51).
+
+A milestone is reached when the exit criteria of its label are met ([`scm-plan.md` §4.2](scm-plan.md)) and its
+quality gate is passed ([`sqa-plan.md` §5.2.1](sqa-plan.md)), not when the date arrives. If it is not reached,
+the label moves to the next configuration and the re-plan follows §10.
 
 ## 5. Iteration plan
 
@@ -115,11 +120,11 @@ It crosses five iterations (1 → 5). Any delay on this chain delays the deliver
 
 ### 5.3 What each iteration produces
 
-Each iteration ends with: the CU documented (analysis and design diagrams in Visual Paradigm), the code merged into `develop` through reviewed pull requests, acceptance tests for every flow of every CU, the real hours recorded, and a minor version (`0.2.0` … `0.7.0`, see [`scm-plan.md` §4](scm-plan.md)). The iteration page in the wiki records who did each part.
+Each iteration ends with: the CU documented (analysis and design diagrams in Visual Paradigm), the code merged into `develop` through reviewed pull requests, acceptance tests for every flow of every CU, the real hours recorded, and an identified **minimum configuration** `CFG-0N` (tag `cfg-iter0N`) with its version (`0.2.0` … `1.0.0`) and, at the milestones, its label (alpha, beta, release candidate, final): see the map in [`scm-plan.md` §3.1.4](scm-plan.md). The iteration page in the wiki records who did each part.
 
 ## 6. Architectural trade-offs
 
-The architecture is described in `architecture-proposal.md` and the decisions in `DECISIONS.md`. This section explains the cost of each choice for the plan.
+The architecture is described in [`architecture-proposal.md`](../architecture/architecture-proposal.md) and the decisions in [`DECISIONS.md`](../../DECISIONS.md). This section explains the cost of each choice for the plan.
 
 | # | Decision | Alternative discarded | Why | Cost / accepted risk |
 |---|---|---|---|---|
@@ -258,5 +263,5 @@ Every re-plan is recorded in the minutes, in the wiki agenda (page 04) and in th
 | A-1 | Availability of ~8 h per person per week | Capacity analysis in §7.4 | To confirm at the meeting |
 | A-2 | AI factor 0.5 | Sensitivity in §7.3 | Measured after Iteration 2 |
 | A-3 | Rates and blended rate 37.50 €/h | ±6 % of cost | To record in `DECISIONS.md` |
-| A-4 | D-01…D-13 accepted as proposed | Re-plan of Elaboration | To confirm at the meeting |
+| A-4 | D-01…D-21 accepted as proposed | Re-plan of Elaboration | To confirm at the meeting |
 | A-5 | UI technology and database (P-04, P-05) | Needed before Iteration 1 | Open |

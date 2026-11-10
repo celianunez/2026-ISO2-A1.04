@@ -119,11 +119,12 @@ A task is done when:
 
 ## 6. Versioning and releases
 
-- [Semantic Versioning 2.0.0](https://semver.org/): `MAJOR.MINOR.PATCH`. `0.y.z` until the final delivery (`1.0.0`).
+- [Semantic Versioning 2.0.0](https://semver.org/): `MAJOR.MINOR.PATCH[-label.n]`. `0.y.z` until the final delivery (`1.0.0`). **One version for the whole repository** (D-15).
+- Each iteration ends with a configuration `CFG-0N`: annotated tag `cfg-iter0N` on `develop`. Milestone configurations get a release label: `0.3.0-alpha.1`, `0.4.0-alpha.2`, `0.7.0-beta.1`, `1.0.0-rc.1`, `1.0.0` (D-16). Map and exit criteria: [`docs/plans/scm-plan.md`](docs/plans/scm-plan.md) §3.1.4 and §4.2.
 - Each planned version is a GitHub milestone.
-- Release steps:
-  1. `release/x.y.z` from `develop`, with only stabilisation fixes.
-  2. PR into `main` (merge commit).
-  3. Tag `vX.Y.Z` on `main`.
+- Release steps (milestone configurations; internal ones only tag `develop`, see `scm-plan.md` §4.3):
+  1. `release/x.y.z[-label.n]` from `develop`, with only stabilisation fixes; raise the coverage thresholds to the gate of the label (`docs/plans/sqa-plan.md` §5.2.1).
+  2. PR into `main` (merge commit) after the configuration audits.
+  3. Tag `vX.Y.Z[-label.n]` and `cfg-iter0N` on `main`.
   4. Merge back into `develop`.
-- `CHANGELOG.md` is updated in every release.
+- `CHANGELOG.md` is updated in every PR (section *Unreleased*) and closed in every configuration.
