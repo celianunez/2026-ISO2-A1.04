@@ -4,8 +4,8 @@
 |---|---|
 | **Group** | ISO II – 3A1.04 (team of 6) |
 | **Owner** | George (quality and test lead), with the whole team |
-| **Status** | Draft v0.2 – to be validated at the team meeting |
-| **Date** | 10/11/2026 |
+| **Status** | Final v1.0 – approved by the team |
+| **Date** | 13/11/2026 |
 | **Structure** | IEEE 730 (Software Quality Assurance), product quality model ISO/IEC 25010 |
 | **Related** | [`quality-testing-strategy.md`](../../quality-testing-strategy.md) (test strategy), [`project-plan.md`](project-plan.md), [`scm-plan.md`](scm-plan.md), [`CONTRIBUTING.md`](../../CONTRIBUTING.md), `DECISIONS.md` |
 
@@ -15,6 +15,7 @@
 |---|---|---|---|
 | v0.1 | 06/11/2026 | D. Villanueva | First version. Builds on `quality-testing-strategy.md`: justifies the characteristics for the healthcare domain, turns them into measurable targets and adds the inspection, control and improvement procedures. |
 | v0.2 | 10/11/2026 | D. Villanueva | Adds the impact of the quality characteristics on each component (§3.3) and on each user story (§3.4), quality gates that grow with each release (§5.2.1, D-17) and the automatic architecture checks (ArchUnit and enforcer, D-14). |
+| v1.0 | 13/11/2026 | Whole team | Final version, approved by the team and submitted as Theoretical Assignment 1 (D-22). |
 
 ---
 
