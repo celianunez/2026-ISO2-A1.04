@@ -91,7 +91,7 @@ Small changes inside the current iteration (a fix, a test, an internal refactor)
 | Tests | Code | `radio-*/src/test/` | Version of the module |
 | CI pipeline | Build | `.github/workflows/ci.yml` | Git history |
 | Issue and PR templates | Process | `.github/` | Git history |
-| Requirements | Document | `historias_de_usuario_SESCAM_v2.xlsx` (repository root), wiki 01–02 | `v2`, wiki revision |
+| Requirements | Document | `user_stories.xlsx` (repository root), wiki 01–02 | `v2`, wiki revision |
 | Architecture and decisions | Document | `docs/architecture/architecture-proposal.md`, `DECISIONS.md` | Header version (v0.x) |
 | Change history | Document | `CHANGELOG.md` | One section per version |
 | Architecture rules | Build | `ArchitectureTest` (D-14), enforcer and JaCoCo rules in the parent POM | Version of the repository |
