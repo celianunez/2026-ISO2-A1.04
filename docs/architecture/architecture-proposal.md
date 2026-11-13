@@ -6,7 +6,7 @@
 | **Group** | ISO II – 3A1.04 |
 | **Status** | Draft v0.3 – reviewed with Pablo, to be confirmed at the team meeting |
 | **Date** | 04/11/2026 |
-| **Inputs** | `historias_de_usuario_SESCAM_v2.xlsx` (26 user stories, 45 use cases), Pablo's feedback on the Maven structure (02/11/2026) |
+| **Inputs** | `user_stories.xlsx` (26 user stories, 45 use cases), Pablo's feedback on the Maven structure (02/11/2026) |
 
 ## 1. Purpose
 
