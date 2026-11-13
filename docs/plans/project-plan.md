@@ -6,7 +6,7 @@
 | **Owner** | Coordinator (Carlos), with the whole team |
 | **Status** | Final v1.0 – approved by the team |
 | **Date** | 13/11/2026 |
-| **Related** | [`scm-plan.md`](scm-plan.md), [`sqa-plan.md`](sqa-plan.md), [`development-workflow.md`](../workflow/development-workflow.md), [`architecture-proposal.md`](../architecture/architecture-proposal.md), [`DECISIONS.md`](../../DECISIONS.md), `historias_de_usuario_SESCAM_v2.xlsx` (repository root), wiki pages 03, 04 and 07 |
+| **Related** | [`scm-plan.md`](scm-plan.md), [`sqa-plan.md`](sqa-plan.md), [`development-workflow.md`](../workflow/development-workflow.md), [`architecture-proposal.md`](../architecture/architecture-proposal.md), [`DECISIONS.md`](../../DECISIONS.md), `user_stories.xlsx` (repository root), wiki pages 03, 04 and 07 |
 
 ## History
 
