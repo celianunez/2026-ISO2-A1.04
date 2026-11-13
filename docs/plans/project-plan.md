@@ -4,8 +4,8 @@
 |---|---|
 | **Group** | ISO II – 3A1.04 (team of 6) |
 | **Owner** | Coordinator (Carlos), with the whole team |
-| **Status** | Draft v0.2 – to be validated at the team meeting |
-| **Date** | 10/11/2026 |
+| **Status** | Final v1.0 – approved by the team |
+| **Date** | 13/11/2026 |
 | **Related** | [`scm-plan.md`](scm-plan.md), [`sqa-plan.md`](sqa-plan.md), [`development-workflow.md`](../workflow/development-workflow.md), [`architecture-proposal.md`](../architecture/architecture-proposal.md), [`DECISIONS.md`](../../DECISIONS.md), `historias_de_usuario_SESCAM_v2.xlsx` (repository root), wiki pages 03, 04 and 07 |
 
 ## History
@@ -14,6 +14,7 @@
 |---|---|---|---|
 | v0.1 | 06/11/2026 | D. Villanueva | First draft. Consolidates the estimates of the user stories spreadsheet, the 8 block-based iterations of the wiki and the architecture decisions D-01…D-13, and adds the justification of every trade-off. |
 | v0.2 | 10/11/2026 | D. Villanueva | Milestones linked to the configurations and release labels of the SCM plan (alpha 1, alpha 2, beta, release candidate, final; D-15, D-16) and to the quality gates per release of the SQA plan (D-17). The 8 iterations are recorded as decision D-21. |
+| v1.0 | 13/11/2026 | Whole team | Final version, approved by the team and submitted as Theoretical Assignment 1 (D-22). |
 
 ---
 

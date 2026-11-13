@@ -4,8 +4,8 @@
 |---|---|
 | **Group** | ISO II – 3A1.04 (team of 6) |
 | **Owner** | David Villanueva (configuration manager) |
-| **Status** | Draft v0.2 – to be validated at the team meeting |
-| **Date** | 10/11/2026 |
+| **Status** | Final v1.0 – approved by the team |
+| **Date** | 13/11/2026 |
 | **Structure** | IEEE 828 (Software Configuration Management Plans), as presented in the theory lectures |
 | **Related** | [`development-workflow.md`](../workflow/development-workflow.md) (reasons behind the workflow), [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (day-to-day rules), [`project-plan.md`](project-plan.md), [`sqa-plan.md`](sqa-plan.md), `DECISIONS.md` |
 
@@ -15,6 +15,7 @@
 |---|---|---|---|
 | v0.1 | 06/11/2026 | D. Villanueva | First version. Organises the workflow of `development-workflow.md` v0.2 into the SCM plan sections, defines the configuration items and baselines, and resolves the open points R-02 and R-12. |
 | v0.2 | 10/11/2026 | D. Villanueva | Adds the map of minimum configurations per iteration (§3.1.4, D-15), the alpha/beta/release-candidate/final labels with exit criteria (§4.2, D-16), separate procedures for internal and milestone configurations (§4.3) and environments, deployment and rollback (§4.5, D-18). Configuration items aligned with the real state of the repository. |
+| v1.0 | 13/11/2026 | Whole team | Final version, approved by the team and submitted as Theoretical Assignment 1 (D-22). |
 
 ---
 
