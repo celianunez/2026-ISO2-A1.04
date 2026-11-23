@@ -126,8 +126,8 @@ This table is the list of `<dependency>` entries between our modules in each `po
 - The adapters do not depend on any of our modules.
 - Only C5 changes the request status. C6 calls `markScheduled` and `markUnscheduled`, C7 `markPerformed`, and C8 `markReported`.
 - Permissions are checked on the server with Spring Security (HU-18). This is configured in C1, and the other modules use the roles and the current user from Spring Security.
-- Every access to clinical data calls `IAuditService` (CU-38).
-- Integration failures are recorded and never block the rest of the system (CU-42). For example, if the PACS is down, the physician can still write the report (HU-25).
+- Every access to clinical data calls `IAuditService` (CU-19-S).
+- Integration failures are recorded and never block the rest of the system (integration-failure flow of CU-20, CU-21 and CU-24). For example, if the PACS is down, the physician can still write the report (HU-25).
 
 ## 6. Communication between components
 
@@ -292,25 +292,28 @@ Each module has the same packages inside:
 
 ### 9.2 Use cases → components
 
-| Component | Use cases |
+One use case per FR with the same number (CU-nn = FR-nn = HU-nn, D-23). The table lists the server
+part `CU-nn-S` of each use case; every client part `CU-nn-C` lives in `radio-app` (D-24).
+
+| Component | Use cases (server part) |
 |-----------|-----------|
-| C1 auth | CU-37, CU-40 |
-| C2 configuration | CU-36 |
-| C3 catalogue | CU-11, CU-45 |
-| C4 patient | CU-25, CU-26, CU-27 |
-| C5 request | CU-12, CU-13, CU-14, CU-15, CU-16, CU-17, CU-33 |
-| C6 scheduling | CU-01, CU-02, CU-03, CU-04, CU-18, CU-28, CU-29, CU-30, CU-31, CU-32, CU-34 |
-| C7 execution | CU-22, CU-23 |
-| C8 report | CU-07, CU-08, CU-19, CU-20 |
-| C9 image | CU-21 |
-| C10 feedback | CU-09, CU-10 |
-| C11 metrics | CU-24, CU-35, CU-44 |
-| C12 notification | CU-05, CU-06 |
-| C13 audit | CU-38, CU-39 |
-| C14 jobs | triggers CU-05 (reminders) and CU-16 (future requests) |
-| C15 sso-adapter | CU-40 (secondary actor), CU-42 |
-| C16 hce-adapter | CU-41, CU-42 |
-| C17 pacs-adapter | CU-43, CU-42 |
+| C1 auth | CU-18, CU-20 |
+| C2 configuration | CU-17 |
+| C3 catalogue | CU-23, CU-05 (guides) |
+| C4 patient | CU-12 |
+| C5 request | CU-06, CU-07, CU-08 (status of requests), CU-15 (priority change), CU-05 (follow-up calendar) |
+| C6 scheduling | CU-01, CU-13, CU-26, CU-14, CU-15, CU-08 (agenda) |
+| C7 execution | CU-10 |
+| C8 report | CU-09, CU-03 |
+| C9 image | CU-25 |
+| C10 feedback | CU-04 |
+| C11 metrics | CU-11, CU-16, CU-22 |
+| C12 notification | CU-02 |
+| C13 audit | CU-19 |
+| C14 jobs | triggers CU-02 (reminders) and CU-07 (future requests) |
+| C15 sso-adapter | CU-20 (secondary actor and integration-failure flow) |
+| C16 hce-adapter | CU-21 |
+| C17 pacs-adapter | CU-24 |
 
 **Result:**
 

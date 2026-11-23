@@ -31,6 +31,7 @@ Closes #
 - [ ] Each use case flow in scope (main, alternative, exception) has acceptance tests.
 - [ ] Surefire and JaCoCo results are attached or linked.
 - [ ] Documentation, `CHANGELOG.md` and `DECISIONS.md` are updated when the change affects them.
+- [ ] If the PR closes a use case part (`CU-nn-C` / `CU-nn-S`), its row in the wiki *Requirements Traceability Matrix* is updated.
 
 **Reviewer** (never the author)
 
