@@ -7,6 +7,9 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 ## [Unreleased]
 
+### Documentation
+- `CONTEXT.md` and `AGENTS.md`: descriptors for the AI agents of every member (D-28).
+
 ## [0.1.0] - 2026-11-10 — CFG-00 · functional baseline
 
 ### Build
