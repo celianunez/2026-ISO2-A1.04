@@ -4,25 +4,37 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Configuration test (docs/workflow/development-workflow.md, section 5).
-         Generic module names until the architecture (D-13) is accepted. -->
     <groupId>es.uclm.sescam</groupId>
     <artifactId>sescam-parent</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>SESCAM Radiodiagnostics - parent</name>
 
+    <!-- Foundation F-1: the configuration test (module-a, module-b) is replaced by the first
+         real modules (D-13, D-19, scm-plan.md CFG-01). Only modules that exist are listed:
+         the rest are created by the iteration that needs them, never to fill an empty folder.
+         Order here is documentation only; Maven builds them following the dependencies. -->
     <modules>
-        <module>module-a</module>
-        <module>module-b</module>
+        <module>radio-common</module>
+        <module>radio-audit</module>
+        <module>radio-sso-adapter</module>
+        <module>radio-configuration</module>
+        <module>radio-catalogue</module>
+        <module>radio-auth</module>
+        <module>radio-app</module>
     </modules>
 
     <properties>
+        <java.version>17</java.version>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <junit.version>5.10.2</junit.version>
+        <!-- D-04: Spring Boot 3.5.x is the latest stable line with Java 17 and JUnit 5.
+             3.5.16 is the newest 3.5.x on Maven Central (checked 24/11/2026). The Spring Boot
+             BOM also manages JUnit, so there is one single source of versions. -->
+        <spring-boot.version>3.5.16</spring-boot.version>
+
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
@@ -37,21 +49,55 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Spring Boot BOM: versions of the starters, H2 and the test libraries (D-04). -->
             <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${junit.version}</version>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
             <dependency>
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit-junit5</artifactId>
                 <version>${archunit.version}</version>
             </dependency>
+
+            <!-- Runtime and test dependencies (spring-boot-starter-*, spring-security-test and
+                 H2) are managed by the Spring Boot BOM above, so they are declared without a
+                 version in each module. Adding them here without a version would shadow the BOM
+                 entry and break the build. -->
+
+            <!-- Our own modules are pinned here and nowhere else (D-15). -->
             <dependency>
                 <groupId>es.uclm.sescam</groupId>
-                <artifactId>module-a</artifactId>
+                <artifactId>radio-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>es.uclm.sescam</groupId>
+                <artifactId>radio-audit</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>es.uclm.sescam</groupId>
+                <artifactId>radio-sso-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>es.uclm.sescam</groupId>
+                <artifactId>radio-configuration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>es.uclm.sescam</groupId>
+                <artifactId>radio-catalogue</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>es.uclm.sescam</groupId>
+                <artifactId>radio-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
@@ -64,11 +110,29 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                        <!-- Required for @RequestParam/@PathVariable without an explicit name
+                             (we do not inherit from spring-boot-starter-parent). -->
+                        <parameters>true</parameters>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <!-- The wiki names integration tests <Class>IT and unit tests
+                             <Class>Test; Surefire only runs *Test by default, and the CI runs
+                             `mvn -B verify` without Failsafe, so *IT is added here. -->
+                        <includes>
+                            <include>**/Test*.java</include>
+                            <include>**/*Test.java</include>
+                            <include>**/*Tests.java</include>
+                            <include>**/*TestCase.java</include>
+                            <include>**/*IT.java</include>
+                        </includes>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -79,6 +143,17 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <version>${maven-enforcer-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <configuration>
+                        <!-- `mvn -pl radio-app -am spring-boot:run` also runs the goal on this
+                             parent (and on every module of -am), and a pom packaging has no main
+                             class. radio-app turns the skip off. -->
+                        <skip>true</skip>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
