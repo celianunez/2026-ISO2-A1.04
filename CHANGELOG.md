@@ -6,6 +6,21 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 (map in [`docs/plans/scm-plan.md`](docs/plans/scm-plan.md) §3.1.4).
 
 ## [Unreleased]
+### radio-audit
+- `IAuditService` contract (record with result, query; append-only), `AuditEntryDto`, `AuditQuery`, `AuditResult` (F-2, #39).
+
+### radio-sso-adapter
+- `ISsoGateway` contract (authenticate, getCorporateIdentity), `CorporateIdentityDto`, `SsoUnavailableException`, `InvalidSsoTokenException` (F-2, #39).
+
+### radio-auth
+- `IAuthenticationService` and `IAuthorizationService` contracts, `AuthenticatedUserDto`, `AuthenticationFailedException` (F-2, #39).
+
+### radio-configuration
+- `IConfigurationService` contract with validity dates, `OpeningHoursDto`, `AppointmentPolicyDto`, `PriorityLevelDto`, `InvalidParameterException` (F-2, #39).
+
+### radio-catalogue
+- `ICatalogueService` contract, `TestTypeDto`, `TestTypeData`, `Modality`, `ClinicalGuideDto`, `DuplicateTestTypeException`, `InvalidTestTypeException` (F-2, #39).
+
 
 ### Build
 - **F-1 foundation**: parent POM `sescam-parent` `0.2.0-SNAPSHOT` with the Spring Boot 3.5.16 BOM (D-04, latest 3.5.x on Maven Central), `spring-boot-maven-plugin`, `parameters=true` in the compiler and the module list of CFG-01 (`docs/plans/scm-plan.md` §3.1.4).
