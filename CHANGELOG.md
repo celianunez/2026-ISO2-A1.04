@@ -8,6 +8,7 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 ## [Unreleased]
 ### radio-audit
 - `IAuditService` contract (record with result, query; append-only), `AuditEntryDto`, `AuditQuery`, `AuditResult` (F-2, #39).
+- Added append-only audit log: `AuditService` implements `IAuditService` with an immutable `AuditEntry`, a repository without update or delete, and `GET /api/audit?user=&from=&to=&resource=` for administrators only (CU-19-S, #31).
 
 ### radio-sso-adapter
 - `ISsoGateway` contract (authenticate, getCorporateIdentity), `CorporateIdentityDto`, `SsoUnavailableException`, `InvalidSsoTokenException` (F-2, #39).
