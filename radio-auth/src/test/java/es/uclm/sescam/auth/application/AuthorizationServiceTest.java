@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -109,6 +111,33 @@ class AuthorizationServiceTest {
         assertThrows(ForbiddenOperationException.class, () -> authorization.assignRole(PATIENT_ID, Role.PHYSICIAN));
         assertThrows(ForbiddenOperationException.class, () -> authorization.removeRole(PATIENT_ID, Role.PATIENT));
         verifyNoInteractions(accounts, entityManager, audit);
+    }
+
+    @Test
+    void grantsOnlyThePermissionsOfTheUsersRoles() {
+        when(accounts.findById(ADMIN_ID)).thenReturn(Optional.of(account(true, Role.PHYSICIAN, Role.ADMINISTRATOR)));
+        when(accounts.findById(PATIENT_ID)).thenReturn(Optional.of(account(true, Role.PATIENT)));
+        when(accounts.findById("unknown")).thenReturn(Optional.empty());
+
+        assertTrue(authorization.hasPermission(ADMIN_ID, "CATALOGUE_EDIT"));
+        assertTrue(authorization.hasPermission(ADMIN_ID, "REPORT_SIGN"));
+        assertTrue(authorization.hasPermission(PATIENT_ID, "OWN_HISTORY_READ"));
+        assertFalse(authorization.hasPermission(PATIENT_ID, "CATALOGUE_EDIT"));
+        assertFalse(authorization.hasPermission(ADMIN_ID, "UNKNOWN_PERMISSION"));
+        assertFalse(authorization.hasPermission("unknown", "CATALOGUE_EDIT"));
+        assertFalse(authorization.hasPermission(ADMIN_ID, null));
+    }
+
+    @Test
+    void usesCurrentAuthoritiesUntilTheUserStartsANewSession() {
+        when(accounts.findById(PATIENT_ID)).thenReturn(Optional.of(account(true, Role.PATIENT, Role.ADMINISTRATOR)));
+        authenticate(PATIENT_ID, Role.PATIENT);
+
+        assertFalse(authorization.hasPermission(PATIENT_ID, "CATALOGUE_EDIT"));
+        verifyNoInteractions(accounts);
+
+        SecurityContextHolder.clearContext();
+        assertTrue(authorization.hasPermission(PATIENT_ID, "CATALOGUE_EDIT"));
     }
 
     private static UserAccount account(boolean active, Role... roles) {
