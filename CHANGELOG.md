@@ -21,6 +21,7 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 ### radio-catalogue
 - `ICatalogueService` contract, `TestTypeDto`, `TestTypeData`, `Modality`, `ClinicalGuideDto`, `DuplicateTestTypeException`, `InvalidTestTypeException` (F-2, #39).
+- Manage the catalogue of test types: `TestType` entity with server-side validation and logical deactivation, `CatalogueService` with an audit entry per change, `CatalogueController` under `/api/catalogue/test-types` (administrators write) and fictitious seed data for `dev`/`demo` (CU-23-S, #37).
 
 
 ### Build
