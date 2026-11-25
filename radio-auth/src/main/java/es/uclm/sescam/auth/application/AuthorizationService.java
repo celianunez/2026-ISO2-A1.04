@@ -14,11 +14,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /** Manages local accounts and reads their roles when establishing a session. */
 @Service
 public class AuthorizationService implements IAuthorizationService {
+
+    // OWN permissions describe a capability; the owning module still checks the resource owner.
+    private static final Map<Role, Set<String>> PERMISSIONS = Map.of(
+            Role.ADMINISTRATOR, Set.of("CATALOGUE_EDIT", "CONFIGURATION_EDIT", "USER_ROLES_EDIT", "AUDIT_READ"),
+            Role.ADMISSIONS, Set.of("PATIENT_MANAGE", "APPOINTMENT_BOOK"),
+            Role.PHYSICIAN, Set.of("TEST_PRESCRIBE", "EXAM_RECORD", "REPORT_SIGN"),
+            Role.PATIENT, Set.of("OWN_REQUESTS_READ", "OWN_APPOINTMENTS_MANAGE", "OWN_HISTORY_READ"));
 
     private final UserAccountRepository accounts;
     private final IAuditService audit;
@@ -76,9 +84,16 @@ public class AuthorizationService implements IAuthorizationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean hasPermission(String userId, String permission) {
-        // Deny access until the CU-18 permission matrix is implemented.
-        return false;
+        if (userId == null || userId.isBlank() || permission == null || permission.isBlank()) {
+            return false;
+        }
+        // A role edit changes the next session, never the current session's authorities.
+        Set<Role> roles = CurrentUser.findUserId().filter(userId::equals).isPresent()
+                ? CurrentUser.findRoles()
+                : getRoles(userId);
+        return roles.stream().anyMatch(role -> PERMISSIONS.getOrDefault(role, Set.of()).contains(permission));
     }
 
     private UserAccount findForRoleChange(String userId) {
