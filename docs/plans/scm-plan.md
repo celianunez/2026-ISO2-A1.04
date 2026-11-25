@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| **Group** | ISO II – 3A1.04 (team of 6) |
+| **Group** | ISO II – 3A1.04 (team of 7 since 24/11/2026, D-29) |
 | **Owner** | David Villanueva (configuration manager) |
-| **Status** | Final v1.0 – approved by the team |
-| **Date** | 13/11/2026 |
+| **Status** | v1.1 – target dates of the configurations after the re-plan (D-25), *proposed*; v1.0 approved by the team on 13/11/2026 |
+| **Date** | 24/11/2026 |
 | **Structure** | IEEE 828 (Software Configuration Management Plans), as presented in the theory lectures |
 | **Related** | [`development-workflow.md`](../workflow/development-workflow.md) (reasons behind the workflow), [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (day-to-day rules), [`project-plan.md`](project-plan.md), [`sqa-plan.md`](sqa-plan.md), `DECISIONS.md` |
 
@@ -16,6 +16,7 @@
 | v0.1 | 06/11/2026 | D. Villanueva | First version. Organises the workflow of `development-workflow.md` v0.2 into the SCM plan sections, defines the configuration items and baselines, and resolves the open points R-02 and R-12. |
 | v0.2 | 10/11/2026 | D. Villanueva | Adds the map of minimum configurations per iteration (§3.1.4, D-15), the alpha/beta/release-candidate/final labels with exit criteria (§4.2, D-16), separate procedures for internal and milestone configurations (§4.3) and environments, deployment and rollback (§4.5, D-18). Configuration items aligned with the real state of the repository. |
 | v1.0 | 13/11/2026 | Whole team | Final version, approved by the team and submitted as Theoretical Assignment 1 (D-22). |
+| v1.1 | 24/11/2026 | D. Villanueva | Target date of every configuration in §3.1.4 after the compressed calendar (D-25); `radio-common` added to CFG-01 (D-27). Procedures unchanged. Proposed, to be confirmed at the next meeting. |
 
 ---
 
@@ -130,16 +131,16 @@ its gates and can be deployed. It is identified by the annotated tag `cfg-iter0N
 commit whose version has no `SNAPSHOT`. The repository has one version (§4.1), so a configuration is
 described by that version **plus the list of modules that exist and that changed**.
 
-| CFG | It | Version | Modules added (+) or changed (~) | Resulting configuration | Label |
-|---|---|---|---|---|---|
-| **CFG-00** | 0 | `0.1.0` | parent POM, `module-a`, `module-b`, CI, templates | configuration test only | internal · functional baseline · `v0.1.0` |
-| **CFG-01** | 1 | `0.2.0` | + `radio-auth`, `radio-sso-adapter`, `radio-audit`, `radio-configuration`, `radio-catalogue`, `radio-app`; − `module-a`, `module-b` (configuration test) | 5 components + app | internal |
-| **CFG-02** | 2 | `0.3.0-alpha.1` | + `radio-hce-adapter`, `radio-patient`, `radio-request` | 8 components + app | 🅰 **Alpha 1** |
-| **CFG-03** | 3 | `0.4.0-alpha.2` | + `radio-scheduling`, `radio-notification`, `radio-jobs` | 11 components + app | 🅰 **Alpha 2** · architecture baseline |
-| **CFG-04** | 4 | `0.5.0` | + `radio-execution`, `radio-report`, `radio-image`, `radio-pacs-adapter` | 15 components + app | internal (beta in progress) |
-| **CFG-05** | 5 | `0.6.0` | ~ `radio-request`, `radio-scheduling`, `radio-report`, `radio-jobs` | 15 components + app | internal (beta in progress) |
-| **CFG-06** | 6 | `0.7.0-beta.1` | + `radio-feedback`, `radio-metrics`; ~ `radio-catalogue`, `radio-request` | **17 components + app** | 🅱 **Beta** · beta baseline |
-| **CFG-07** | 7 | `1.0.0-rc.1` → `1.0.0` | none added; fixes only (code freeze) | 17 components + app | 🏁 **Release candidate** → ✅ **Final** · product baseline |
+| CFG | It | Version | Target date (D-25) | Modules added (+) or changed (~) | Resulting configuration | Label |
+|---|---|---|---|---|---|---|
+| **CFG-00** | 0 | `0.1.0` | 10/11 (done) | parent POM, `module-a`, `module-b`, CI, templates | configuration test only | internal · functional baseline · `v0.1.0` |
+| **CFG-01** | 1 | `0.2.0` | 28/11 | + `radio-common`, `radio-auth`, `radio-sso-adapter`, `radio-audit`, `radio-configuration`, `radio-catalogue`, `radio-app`; − `module-a`, `module-b` (configuration test) | 5 components + app | internal |
+| **CFG-02** | 2 | `0.3.0-alpha.1` | 01/12 | + `radio-hce-adapter`, `radio-patient`, `radio-request` | 8 components + app | 🅰 **Alpha 1** |
+| **CFG-03** | 3 | `0.4.0-alpha.2` | 04/12 | + `radio-scheduling`, `radio-notification`, `radio-jobs` | 11 components + app | 🅰 **Alpha 2** · architecture baseline |
+| **CFG-04** | 4 | `0.5.0` | 07/12 | + `radio-execution`, `radio-report`, `radio-image`, `radio-pacs-adapter` | 15 components + app | internal (beta in progress) |
+| **CFG-05** | 5 | `0.6.0` | 09/12 | ~ `radio-request`, `radio-scheduling`, `radio-report`, `radio-jobs` | 15 components + app | internal (beta in progress) |
+| **CFG-06** | 6 | `0.7.0-beta.1` | 12/12 | + `radio-feedback`, `radio-metrics`; ~ `radio-catalogue`, `radio-request` | **17 components + app** | 🅱 **Beta** · beta baseline |
+| **CFG-07** | 7 | `1.0.0-rc.1` → `1.0.0` | 14/12 → 15/12 | none added; fixes only (code freeze) | 17 components + app | 🏁 **Release candidate** → ✅ **Final** · product baseline |
 
 The stories of each iteration are in [`project-plan.md` §5.1](project-plan.md) and the module of each
 story in [`architecture-proposal.md` §3](../architecture/architecture-proposal.md). Every configuration

@@ -6,6 +6,22 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 (map in [`docs/plans/scm-plan.md`](docs/plans/scm-plan.md) §3.1.4).
 
 ## [Unreleased]
+### radio-audit
+- `IAuditService` contract (record with result, query; append-only), `AuditEntryDto`, `AuditQuery`, `AuditResult` (F-2, #39).
+- Added append-only audit log: `AuditService` implements `IAuditService` with an immutable `AuditEntry`, a repository without update or delete, and `GET /api/audit?user=&from=&to=&resource=` for administrators only (CU-19-S, #31).
+
+### radio-sso-adapter
+- `ISsoGateway` contract (authenticate, getCorporateIdentity), `CorporateIdentityDto`, `SsoUnavailableException`, `InvalidSsoTokenException` (F-2, #39).
+
+### radio-auth
+- `IAuthenticationService` and `IAuthorizationService` contracts, `AuthenticatedUserDto`, `AuthenticationFailedException` (F-2, #39).
+
+### radio-configuration
+- `IConfigurationService` contract with validity dates, `OpeningHoursDto`, `AppointmentPolicyDto`, `PriorityLevelDto`, `InvalidParameterException` (F-2, #39).
+
+### radio-catalogue
+- `ICatalogueService` contract, `TestTypeDto`, `TestTypeData`, `Modality`, `ClinicalGuideDto`, `DuplicateTestTypeException`, `InvalidTestTypeException` (F-2, #39).
+
 
 ### Build
 - **F-1 foundation**: parent POM `sescam-parent` `0.2.0-SNAPSHOT` with the Spring Boot 3.5.16 BOM (D-04, latest 3.5.x on Maven Central), `spring-boot-maven-plugin`, `parameters=true` in the compiler and the module list of CFG-01 (`docs/plans/scm-plan.md` §3.1.4).
@@ -17,6 +33,12 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 ### Removed
 - `module-a` and `module-b`, the configuration test of Iteration 0, replaced by the first real modules (CFG-01).
+
+### Documentation
+- Re-plan after the slippage of Elaboration: decisions D-25 to D-29 (*proposed*: compressed calendar, contracts first, resolution of P-01 to P-13, agent descriptors, team of 7 with module owners); `project-plan.md` v1.1 and `scm-plan.md` v1.1 with the new dates.
+
+### Documentation
+- `CONTEXT.md` and `AGENTS.md`: descriptors for the AI agents of every member (D-28).
 
 ## [0.1.0] - 2026-11-10 — CFG-00 · functional baseline
 
