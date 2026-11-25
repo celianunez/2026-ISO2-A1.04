@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| **Group** | ISO II – 3A1.04 (team of 6) |
-| **Owner** | Coordinator (Carlos), with the whole team |
-| **Status** | Final v1.0 – approved by the team |
-| **Date** | 13/11/2026 |
+| **Group** | ISO II – 3A1.04 (team of 7 since 24/11/2026, D-29) |
+| **Owner** | Coordinator (David since 24/11/2026; Carlos until then), with the whole team |
+| **Status** | v1.1 – compressed calendar (D-25) and team of 7 (D-29), *proposed*; v1.0 approved by the team on 13/11/2026 |
+| **Date** | 24/11/2026 |
 | **Related** | [`scm-plan.md`](scm-plan.md), [`sqa-plan.md`](sqa-plan.md), [`development-workflow.md`](../workflow/development-workflow.md), [`architecture-proposal.md`](../architecture/architecture-proposal.md), [`DECISIONS.md`](../../DECISIONS.md), `user_stories.xlsx` (repository root), wiki pages 03, 04 and 07 |
 
 ## History
@@ -15,6 +15,7 @@
 | v0.1 | 06/11/2026 | D. Villanueva | First draft. Consolidates the estimates of the user stories spreadsheet, the 8 block-based iterations of the wiki and the architecture decisions D-01…D-13, and adds the justification of every trade-off. |
 | v0.2 | 10/11/2026 | D. Villanueva | Milestones linked to the configurations and release labels of the SCM plan (alpha 1, alpha 2, beta, release candidate, final; D-15, D-16) and to the quality gates per release of the SQA plan (D-17). The 8 iterations are recorded as decision D-21. |
 | v1.0 | 13/11/2026 | Whole team | Final version, approved by the team and submitted as Theoretical Assignment 1 (D-22). |
+| v1.1 | 24/11/2026 | D. Villanueva | Re-plan after the slippage of Elaboration: compressed calendar (§4, §5.1, D-25), contracts first (D-26), team of 7 with module owners and the assignment of every use case (§3, §5.4, D-29). Blocks, stories, estimates and gates unchanged. Proposed, to be confirmed at the next meeting. |
 
 ---
 
@@ -50,25 +51,26 @@ Engineers own requirements, analysis, interface design, test design and reviews.
 
 ## 3. Organisation and roles
 
-| Member | Main role | Owned document / area |
-|---|---|---|
-| Carlos | Coordinator (requirements manager) | Project plan, agenda, meetings |
-| David | Secretary, configuration manager | Minutes, workflow, SCM plan |
-| Celia | Analyst | User stories, use cases, wiki |
-| Alejandro | Architect / designer | Architecture proposal, components, interfaces |
-| Pablo | Designer / programmer | Maven structure, coding conventions |
-| George | Quality and test lead | Quality strategy, SQA plan |
+| Member | Main role | Owned document / area | Modules owned (D-29) |
+|---|---|---|---|
+| David | **Coordinator** (since 24/11/2026), secretary, configuration manager | Project plan, agenda, meetings, minutes, workflow, SCM plan | `radio-notification`, `radio-jobs`, `radio-metrics` |
+| Carlos | Developer (coordinator until 24/11/2026) | User guide | `radio-patient`, `radio-report`, users and roles in `radio-auth` |
+| Celia | Analyst, repository administrator | User stories, use cases, wiki | `radio-configuration`, `radio-scheduling` |
+| Alejandro | Architect / designer | Architecture proposal, components, interfaces, contracts of each iteration (D-26) | `radio-auth` (security, login), `radio-sso-adapter`, `radio-request`, `radio-image` |
+| Pablo | Designer / programmer | Maven structure, coding conventions | build, `radio-common`, `radio-catalogue`, `radio-hce-adapter`, `radio-pacs-adapter` |
+| George | Quality and test lead | Quality strategy, SQA plan, quality gates | `radio-audit`, `radio-execution`, `radio-feedback` |
+| Orhan | Developer (joined 24/11/2026) | Client conventions | the client: `radio-app/src/main/resources/static/` |
 
-Because the team is small, everybody also programs and tests: each member owns the iterations or the use cases assigned at the weekly planning meeting. Roles are recorded in the minutes and in the wiki home page.
+Because the team is small, everybody also programs and tests: each member owns the modules above and the use cases of §5.4. The owner of a module reviews every pull request that touches it. Roles are recorded in the minutes and in the wiki home page.
 
 ## 4. Phases and milestones
 
 | Phase | Iterations | Weeks | Exit criterion (milestone) | Date |
 |---|---|---|---|---|
 | **Inception** | 0 | W44 | Requirements v2 and use cases agreed; plan, workflow and CI in place; configuration test passed | 01/11/2026 |
-| **Elaboration** (alpha) | 1–3 | W45–W47 | **Alpha 1** at the end of It 2 (`v0.3.0-alpha.1`, 15/11/2026: login → patient → prescription end to end). **Architecture baseline = Alpha 2** (`v0.4.0-alpha.2`): contracts frozen, security and audit working, the booking core works end to end (prescribe → book → notify) | 22/11/2026 |
-| **Construction** (beta) | 4–6 | W48–W50 | **Initial operational capability = Beta** (`v0.7.0-beta.1`): every story delivered and tested; full path from prescription to signed report | 13/12/2026 |
-| **Transition** | 7 | W51 | **Release candidate** `v1.0.0-rc.1` (14/12) → **product release `v1.0.0`**: integrated tagged build, wiki complete, self-assessment | 15/12/2026 |
+| **Elaboration** (alpha) | 1–3 | v1.0: W45–W47 · **v1.1: 25/11–04/12** | **Alpha 1** at the end of It 2 (`v0.3.0-alpha.1`, v1.1: 01/12/2026: login → patient → prescription end to end). **Architecture baseline = Alpha 2** (`v0.4.0-alpha.2`): contracts frozen, security and audit working, the booking core works end to end (prescribe → book → notify) | v1.0: 22/11 · **v1.1: 04/12/2026** |
+| **Construction** (beta) | 4–6 | v1.0: W48–W50 · **v1.1: 05–12/12** | **Initial operational capability = Beta** (`v0.7.0-beta.1`): every story delivered and tested; full path from prescription to signed report | v1.0: 13/12 · **v1.1: 12/12/2026** |
+| **Transition** | 7 | v1.0: W51 · **v1.1: 13–15/12** | **Release candidate** `v1.0.0-rc.1` (14/12) → **product release `v1.0.0`**: integrated tagged build, wiki complete, self-assessment | 15/12/2026 |
 
 External fixed dates: **theory report on 13/11/2026** (W46) and **practical delivery on 15/12/2026** (W51).
 
@@ -80,17 +82,24 @@ the label moves to the next configuration and the re-plan follows §10.
 
 ### 5.1 The plan
 
-| It. | Phase | Week | Block | User stories | SP | h (no AI) |
-|---|---|---|---|---|---:|---:|
-| 0 | Inception | W44 | — | Skeleton, CI, configuration test | – | 40 |
-| 1 | Elaboration | W45 | 1 · Cross-cutting base | HU-18, HU-20, HU-19, HU-17, HU-23 | 25 | 70 |
-| 2 | Elaboration | W46 | 2a · Patient data and prescription | HU-21, HU-12, HU-06 | 18 | 52 |
-| 3 | Elaboration | W47 | 2b · Appointments | HU-13, HU-01, HU-26, HU-02 | 18 | 50 |
-| 4 | Construction | W48 | 3a · Execution, reports, images | HU-10, HU-09, HU-24, HU-25 | 16 | 44 |
-| 5 | Construction | W49 | 3b · Follow-up and lists | HU-07, HU-08, HU-14, HU-15, HU-03 | 19 | 52 |
-| 6 | Construction | W50 | 4 · Exploitation | HU-04, HU-05, HU-11, HU-16, HU-22 | 20 | 54 |
-| 7 | Transition | W51 | — | Integration, packaging, delivery | – | 20 |
-| | | | | **26 stories** | **116** | **382** |
+| It. | Phase | Week (v1.0) | **Dates (v1.1, D-25)** | Block | User stories | SP | h (no AI) |
+|---|---|---|---|---|---|---:|---:|
+| 0 | Inception | W44 | 26/10–01/11 (done) | — | Skeleton, CI, configuration test | – | 40 |
+| F | Elaboration | – | **24–25/11** | foundation | Build baseline, `radio-common`, `radio-app`, contracts of It 1, client shell | – | (in It 1) |
+| 1 | Elaboration | W45 | **25–28/11** | 1 · Cross-cutting base | HU-18, HU-20, HU-19, HU-17, HU-23 | 25 | 70 |
+| 2 | Elaboration | W46 | **29/11–01/12** | 2a · Patient data and prescription | HU-21, HU-12, HU-06 | 18 | 52 |
+| 3 | Elaboration | W47 | **02–04/12** | 2b · Appointments | HU-13, HU-01, HU-26, HU-02 | 18 | 50 |
+| 4 | Construction | W48 | **05–07/12** | 3a · Execution, reports, images | HU-10, HU-09, HU-24, HU-25 | 16 | 44 |
+| 5 | Construction | W49 | **08–09/12** | 3b · Follow-up and lists | HU-07, HU-08, HU-14, HU-15, HU-03 | 19 | 52 |
+| 6 | Construction | W50 | **10–12/12** | 4 · Exploitation | HU-04, HU-05, HU-11, HU-16, HU-22 | 20 | 54 |
+| 7 | Transition | W51 | **13–15/12** | — | Integration, packaging, delivery | – | 20 |
+| | | | | | **26 stories** | **116** | **382** |
+
+**v1.1 (D-25, proposed).** On 24/11/2026 no product code existed, while the v1.0 calendar had
+iterations 1–3 finished. The blocks, their order, the stories and the estimates do not change; the
+iterations are shortened to 2–3 days and the seven members work in parallel on different modules
+(§5.4). Each iteration ends with a code freeze at 12:00 of its last day, the quality gate and the
+configuration tag. Root causes of the slippage and the recovery plan: wiki *10) Project History*.
 
 ### 5.2 Why the stories are grouped this way
 
@@ -122,6 +131,23 @@ It crosses five iterations (1 → 5). Any delay on this chain delays the deliver
 ### 5.3 What each iteration produces
 
 Each iteration ends with: the CU documented (analysis and design diagrams in Visual Paradigm), the code merged into `develop` through reviewed pull requests, acceptance tests for every flow of every CU, the real hours recorded, and an identified **minimum configuration** `CFG-0N` (tag `cfg-iter0N`) with its version (`0.2.0` … `1.0.0`) and, at the milestones, its label (alpha, beta, release candidate, final): see the map in [`scm-plan.md` §3.1.4](scm-plan.md). The iteration page in the wiki records who did each part.
+
+### 5.4 Assignment per iteration (v1.1, D-29)
+
+| It. | David | Pablo | Alejandro | Carlos | Celia | George | Orhan |
+|---|---|---|---|---|---|---|---|
+| F | decisions, agent descriptors, re-plan, issues | F-1 build baseline (#38) | F-2 contracts of It 1 (#39) | reviews F-1 | branch protection | reviews F-2 | F-3 client shell (#40) |
+| 1 | tag `cfg-iter01` | CU-23 | CU-20-S | CU-18 | CU-17 | CU-19 | CU-20-C |
+| 2 | release Alpha 1 | CU-21 | CU-06-S + contracts of It 2 | CU-12-S | analysis of CU-13 | contract tests + Alpha 1 gate | CU-12-C, CU-06-C |
+| 3 | CU-02 + release Alpha 2 | PACS simulator | contracts of It 3 + architecture review | CU-01 | CU-13 | Alpha 2 gate | CU-26 |
+| 4 | tag `cfg-iter04` | CU-24 | CU-25 + contracts of It 4 | CU-09 | analysis of It 5 | CU-10 | analysis of It 5 |
+| 5 | follow-up job + tag `cfg-iter05` | CU-14 | CU-07 | CU-03 | CU-15 | regression | CU-08 |
+| 6 | CU-11 + release Beta | CU-05 | contracts of It 6 + architecture review | DB restore rehearsal | CU-16 | CU-04 + Beta gate | CU-22 |
+| 7 | RC → `1.0.0`, configuration audit | regression | regression | user guide | regression | final audit | user guide |
+
+The order of the deliveries inside each iteration and their dependencies follow the module levels of
+the architecture proposal §5: contracts first (D-26), then the lower modules (audit before everything
+in It 1), then the client parts.
 
 ## 6. Architectural trade-offs
 
@@ -226,7 +252,7 @@ Assuming a realistic availability of **about 8 h per person per week** (48 h for
 | Scope vs. date | **The date is fixed (15/12); scope is the variable.** | The delivery date cannot move. |
 | What is cut first | **Block 4 (Iteration 6: HU-04, HU-05, HU-11, HU-16, HU-22).** | No other story depends on block 4 (it is a leaf of the dependency graph), so cutting it does not break anything already built. The client loses statistics and surveys, but keeps the clinical flow. |
 | What is never cut | Block 1 and the critical path (§5.2). | Without them there is no working system. |
-| Buffer | Iteration 7 is a stabilisation iteration with no new features. | It absorbs defects and integration problems. Note that the delivery is on Tuesday 15/12, so in practice the buffer is the weekend before plus two days. |
+| Buffer | Iteration 7 is a stabilisation iteration with no new features. | It absorbs defects and integration problems. Note that the delivery is on Tuesday 15/12, so in practice the buffer is the weekend before plus two days. In v1.1 (D-25) the buffer is 13–14/12. |
 | Theory report week | Lighter Iteration 2. | Avoid competing with the theory report. |
 | Integration | Continuous (every PR builds all modules) instead of a final big integration. | A late "big bang" integration is the classic failure of plans that read *1 CU = 1 iteration* literally. |
 
