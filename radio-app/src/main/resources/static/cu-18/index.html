@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Roles and permissions</title>
+    <style>
+        main { max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font: 1rem/1.5 system-ui, sans-serif; }
+        form, .roles { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+        input, button, select { font: inherit; padding: .35rem .5rem; }
+        .account { border-top: 1px solid #c8c8c8; padding: .8rem 0; }
+        .account h2 { margin: 0 0 .4rem; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Roles and permissions</h1>
+        <p id="roles-status" role="status" aria-live="polite">Loading…</p>
+        <section id="roles-admin" aria-label="User accounts" hidden>
+            <form id="roles-search">
+                <label for="roles-query">Search by name or ID</label>
+                <input id="roles-query" name="query" type="search">
+                <button type="submit">Search</button>
+            </form>
+            <div id="roles-results" aria-label="Search results"></div>
+        </section>
+    </main>
+    <script type="module" src="./cu-18.js"></script>
+</body>
+</html>
