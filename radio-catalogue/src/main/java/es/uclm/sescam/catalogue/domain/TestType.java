@@ -9,7 +9,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.springframework.data.domain.Persistable;
 
 import java.util.Locale;
 
@@ -25,7 +29,7 @@ import java.util.Locale;
  */
 @Entity
 @Table(name = "test_type")
-public class TestType {
+public class TestType implements Persistable<String> {
 
     /** Longest code that is stored, for example {@code RX-THORAX}. */
     public static final int MAX_CODE_LENGTH = 32;
@@ -77,8 +81,44 @@ public class TestType {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
+    /**
+     * {@code true} until the entity is stored or loaded. The code is chosen by the user, so without
+     * this flag Spring Data would treat every new test type as existing and {@code save} would merge
+     * it, silently overwriting a test type created at the same moment with the same code. With it,
+     * a new test type is persisted and such a race fails on the primary key.
+     */
+    @Transient
+    private boolean isNew = true;
+
     /** For JPA only. */
     protected TestType() {
+    }
+
+    /** Marks the entity as stored once JPA has loaded or inserted it. */
+    @PostLoad
+    @PostPersist
+    void markNotNew() {
+        this.isNew = false;
+    }
+
+    /**
+     * The identifier for Spring Data: the code.
+     *
+     * @return the code of the test type
+     */
+    @Override
+    public String getId() {
+        return code;
+    }
+
+    /**
+     * Whether the entity has not been stored yet, so that {@code save} persists instead of merging.
+     *
+     * @return {@code true} for a test type that is not stored yet
+     */
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
     private TestType(String code, TestTypeData data) {

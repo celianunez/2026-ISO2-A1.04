@@ -23,8 +23,10 @@ import java.util.Optional;
  * deactivation and an audit entry for every change (P-12).
  *
  * <p>Reading is open to every authenticated user; writing is restricted to administrators by
- * {@code @PreAuthorize} on the controller (D-09). The audit entry is recorded inside the same
- * transaction as the change, so a stored change is never missing from the log.
+ * {@code @PreAuthorize} on the controller (D-09). The audit entry is recorded after the change is
+ * saved, but {@link IAuditService#record} runs in its own transaction (CU-19), so the entry is kept
+ * even if the change is later rolled back: in that rare case the log shows an attempted change that
+ * was not stored, never a stored change that is missing from the log.
  */
 @Service
 public class CatalogueService implements ICatalogueService {

@@ -97,7 +97,7 @@ class CatalogueControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PHYSICIAN", "ADMISSIONS", "ADMINISTRATOR"})
+    @ValueSource(strings = {"PATIENT", "PHYSICIAN", "ADMISSIONS", "ADMINISTRATOR"})
     void anyAuthenticatedUserCanReadOneTestType(String role) throws Exception {
         when(catalogueService.findTestType("RX-THORAX")).thenReturn(Optional.of(active()));
 
@@ -173,7 +173,7 @@ class CatalogueControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PHYSICIAN", "ADMISSIONS", "RADIOLOGIST"})
+    @ValueSource(strings = {"PATIENT", "PHYSICIAN", "ADMISSIONS"})
     void aNonAdministratorCannotWrite(String role) throws Exception {
         mvc.perform(post(BASE + "/RX-NEW").with(csrf()).with(user("u-other").roles(role))
                         .contentType("application/json").content(VALID_JSON))
