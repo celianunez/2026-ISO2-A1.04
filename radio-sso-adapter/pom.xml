@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>es.uclm.sescam</groupId>
+        <artifactId>sescam-parent</artifactId>
+        <version>0.2.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>radio-sso-adapter</artifactId>
+    <name>SESCAM Radiodiagnostics - SSO adapter</name>
+    <description>Connection to the corporate SSO plus its simulator (D-08, HU-20). Skeleton created
+        by F-1; the contract is F-2 and the code is CU-20-S (Alejandro).</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -26,6 +26,11 @@ replay_pid*
 # Maven
 target/
 
+# H2 database of the `demo` profile (radio-app/src/main/resources/application.yml)
+data/
+*.mv.db
+*.trace.db
+
 # IDEs (Eclipse, IntelliJ, VS Code)
 .classpath
 .project

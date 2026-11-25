@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>es.uclm.sescam</groupId>
+        <artifactId>sescam-parent</artifactId>
+        <version>0.2.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>radio-auth</artifactId>
+    <name>SESCAM Radiodiagnostics - identity and access</name>
+    <description>Login, Spring Security configuration, users, roles and permissions (HU-18, HU-20).
+        Skeleton created by F-1; the security configuration is CU-20-S (Alejandro) and users and
+        roles are CU-18-S (Carlos).</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-sso-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-audit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,68 @@
+# Application name and default (profile-less) behaviour.
+spring:
+  application:
+    name: radio-sescam
+
+# Adapters of the external systems: simulator until a real connection is approved (D-08).
+radio:
+  adapters:
+    mode: simulator
+
+---
+# dev: local development. H2 in memory, console on, no file to clean up.
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:radio;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+
+---
+# test: the profile of RadioApplicationIT and of the integration tests. Isolated in-memory database.
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:radio-test;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+
+---
+# demo: the configuration that is deployed for the demo. The database is a file, so the data
+# survives a restart and the restore rehearsal (D-18) can copy ./data/radio.mv.db.
+spring:
+  config:
+    activate:
+      on-profile: demo
+  datasource:
+    url: jdbc:h2:file:./data/radio;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update

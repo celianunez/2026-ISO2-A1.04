@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>es.uclm.sescam</groupId>
+        <artifactId>sescam-parent</artifactId>
+        <version>0.2.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>radio-app</artifactId>
+    <name>SESCAM Radiodiagnostics - application</name>
+    <description>Composition root of the modular monolith: it starts the application and hosts
+        the static web client. No business logic here (D-01, D-19).</description>
+
+    <dependencies>
+        <!-- radio-app depends on every module (architecture proposal, section 5). -->
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-audit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-sso-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-configuration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-catalogue</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-auth</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- H2: in memory for dev and test, file for demo (D-18). -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- ArchitectureTest (D-14) lives here: this module sees every other one. -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- Overrides the skip of the parent: this is the module with the main class. -->
+                    <skip>false</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
