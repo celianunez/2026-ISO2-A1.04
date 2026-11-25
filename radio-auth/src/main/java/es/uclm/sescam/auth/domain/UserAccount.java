@@ -47,6 +47,22 @@ public class UserAccount {
         this.roles.addAll(Set.copyOf(roles));
     }
 
+    public String id() {
+        return id;
+    }
+
+    public String displayName() {
+        return displayName;
+    }
+
+    public boolean assignRole(Role role) {
+        return roles.add(Objects.requireNonNull(role, "role"));
+    }
+
+    public boolean removeRole(Role role) {
+        return roles.remove(Objects.requireNonNull(role, "role"));
+    }
+
     public boolean isActive() {
         return active;
     }
