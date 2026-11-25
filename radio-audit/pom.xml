@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>es.uclm.sescam</groupId>
+        <artifactId>sescam-parent</artifactId>
+        <version>0.2.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>radio-audit</artifactId>
+    <name>SESCAM Radiodiagnostics - audit</name>
+    <description>Append-only audit of the access to clinical data (D-10, HU-19). Skeleton created
+        by F-1; the code is CU-19-S (George).</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>es.uclm.sescam</groupId>
+            <artifactId>radio-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>
