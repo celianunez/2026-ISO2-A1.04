@@ -34,6 +34,12 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 ### Removed
 - `module-a` and `module-b`, the configuration test of Iteration 0, replaced by the first real modules (CFG-01).
 
+### Documentation
+- Re-plan after the slippage of Elaboration: decisions D-25 to D-29 (*proposed*: compressed calendar, contracts first, resolution of P-01 to P-13, agent descriptors, team of 7 with module owners); `project-plan.md` v1.1 and `scm-plan.md` v1.1 with the new dates.
+
+### Documentation
+- `CONTEXT.md` and `AGENTS.md`: descriptors for the AI agents of every member (D-28).
+
 ## [0.1.0] - 2026-11-10 — CFG-00 · functional baseline
 
 ### Build
