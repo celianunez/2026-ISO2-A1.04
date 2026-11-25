@@ -15,6 +15,7 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 ### radio-auth
 - `IAuthenticationService` and `IAuthorizationService` contracts, `AuthenticatedUserDto`, `AuthenticationFailedException` (F-2, #39).
+- CU-18-S tests: `UserRoleControllerTest` (administrator only on every `/api/users` endpoint, 401 anonymous, 404 unknown user, 400 unknown role) and `AuthorizationServiceContractTest` (H2 + real audit log: stored and audited role changes, no-op changes not audited, search, permissions, next-session rule); `pom.xml` declares the web, JPA and security starters it uses (#28).
 
 ### radio-configuration
 - `IConfigurationService` contract with validity dates, `OpeningHoursDto`, `AppointmentPolicyDto`, `PriorityLevelDto`, `InvalidParameterException` (F-2, #39).
