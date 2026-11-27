@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Simulated corporate SSO (D-08, D-27): for now the only {@link ISsoGateway} of the application. When a real adapter
- * is added, both will need a condition to choose one.
+ * Simulated corporate SSO (D-08, D-27): the only {@link ISsoGateway} while {@code radio.adapters.mode} is
+ * {@code simulator}.
  *
  * <p>It knows the fictitious users agreed with CU-18 (the same ids as the seed users of {@code radio-auth}). The token
  * of a user is {@code token-<userId>}; {@code token-expired} and any other token are rejected. With
