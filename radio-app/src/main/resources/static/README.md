@@ -33,7 +33,7 @@ The client of SESCAM Radiodiagnostics (D-27, P-05): plain HTML, JavaScript (ES m
 |---|---|
 | `request(path, { method, body, redirectOn401 })` | Any call. Returns the JSON (or `undefined` for 204). Throws `ApiError`. |
 | `requireUser(roles)` | The user of the session `{ id, displayName, roles }`; 403 `ApiError` if they have none of the roles. |
-| `currentUser()`, `login(token)`, `logout()` | Session (used by the login and menu pages). |
+| `currentUser()`, `login(token)`, `logout()` | Session (used by the login and menu pages). `logout()` goes to the login page, also when the session had already ended (401). |
 | `hasAnyRole(user, roles)` | To show or hide an action. |
 | `ApiError` | `status` (HTTP, 0 when the server cannot be reached), `error` (code), `message` (text for the user). |
 

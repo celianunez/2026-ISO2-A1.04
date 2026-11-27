@@ -6,6 +6,7 @@
  *   header (the server renews it on login and clears it on logout).
  * - Errors become an {@link ApiError} with the `{ error, message }` of the server.
  * - 401: the session is over, so the browser goes to the login page (unless the caller turns it off).
+ *   `logout()` also goes there on 401: the session had already ended.
  * - 403: the error carries the "not allowed" message, for the page to show it.
  *
  * No business logic here: pages show data and send what the user typed; the server decides.
@@ -127,9 +128,18 @@ export function currentUser({redirectOn401 = true} = {}) {
     return request('/api/auth/me', {redirectOn401});
 }
 
-/** Ends the session and goes to the login page. */
+/**
+ * Ends the session and goes to the login page. If the session had already ended (401), it goes to the login page too,
+ * with the "session ended" notice. Any other error is thrown, so the menu stays open and shows it.
+ */
 export async function logout() {
-    await request('/api/auth/logout', {method: 'POST', redirectOn401: false});
+    try {
+        await request('/api/auth/logout', {method: 'POST', redirectOn401: false});
+    } catch (error) {
+        if (error.status !== 401) throw error;
+        goToLogin();
+        return;
+    }
     goToLogin(false);
 }
 
