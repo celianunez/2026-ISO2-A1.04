@@ -25,5 +25,10 @@
             <groupId>es.uclm.sescam</groupId>
             <artifactId>radio-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
