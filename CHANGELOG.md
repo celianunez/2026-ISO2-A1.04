@@ -30,6 +30,7 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 
 ### radio-app (client)
+- CU-18-C tests: show the server message for a missing account and hide the role editor when a write is forbidden (#27).
 - **F-3 client shell** (#40): login page with the simulated corporate SSO (`index.html`), menu by role with logout (`app.html`), shared API client `js/api.js` (CSRF header from the `XSRF-TOKEN` cookie on POST/PUT/PATCH/DELETE, `ApiError { status, error, message }`, 401 → login, 403 → "not allowed"; logout goes to the login page also when the session had already ended), menu registry `js/menu.js`, shared styles `css/app.css` and the page convention in `static/README.md`. The CU-18 page uses `js/api.js` and appears in the administrator menu. Test: `StaticClientIT` (client files public, scripts served as JavaScript, API still needs a session).
 
 ### Build
