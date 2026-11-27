@@ -12,10 +12,12 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 ### radio-sso-adapter
 - `ISsoGateway` contract (authenticate, getCorporateIdentity), `CorporateIdentityDto`, `SsoUnavailableException`, `InvalidSsoTokenException` (F-2, #39).
+- `SimulatedSsoGateway`: simulated OpenID Connect SSO (D-27) with the fictitious users agreed with CU-18 (token `token-<userId>`), `token-expired` rejected and a failure mode (`radio.sso.simulator.down=true`); contract test `SimulatedSsoGatewayTest`. `pom.xml` declares `spring-context`, which the simulator uses (CU-20-S, #34).
 
 ### radio-auth
 - `IAuthenticationService` and `IAuthorizationService` contracts, `AuthenticatedUserDto`, `AuthenticationFailedException` (F-2, #39).
 - CU-18-S tests: `UserRoleControllerTest` (administrator only on every `/api/users` endpoint, 401 anonymous, 404 unknown user, 400 unknown role) and `AuthorizationServiceContractTest` (H2 + real audit log: stored and audited role changes, no-op changes not audited, search, permissions, next-session rule); `pom.xml` declares the web, JPA and security starters it uses (#28).
+- Log in with the corporate SSO (CU-20-S, #34): `AuthenticationService` implements `IAuthenticationService` (identity from `ISsoGateway`, roles from `IAuthorizationService`, every attempt audited); `AuthController` with `POST /api/auth/login` (401 `invalid_token`, 403 `no_role`, 503 `sso_unavailable`), `GET /api/auth/me` and `POST /api/auth/logout`; `SecurityConfig` for the whole application: `/api/**` needs a session except the login, static client public, method security on, CSRF with the `XSRF-TOKEN` cookie and the `X-XSRF-TOKEN` header, JSON 401/403 instead of a login form, new session id and new CSRF token on login, CSRF cookie cleared on logout. Tests: `AuthenticationServiceTest`, `AuthControllerTest`, `LoginFlowIT` (simulator + roles of CU-18 on H2: physician forbidden on `/api/users`, role change effective at the next login).
 
 ### radio-configuration
 - `IConfigurationService` contract with validity dates, `OpeningHoursDto`, `AppointmentPolicyDto`, `PriorityLevelDto`, `InvalidParameterException` (F-2, #39).
