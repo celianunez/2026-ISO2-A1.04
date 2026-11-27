@@ -1,0 +1,153 @@
+@startuml cu-18-sequence
+title CU-18 - Manage roles and permissions
+actor Administrator as Admin
+actor "Target user" as Target
+boundary "CU-18 page" as Page
+participant "Spring Security" as Security
+control UserRoleController as Controller
+control AuthorizationService as Authz
+database UserAccountRepository as Accounts
+participant "IAuditService" as Audit
+control AuthenticationService as Login
+
+Admin -> Page : Open Roles and permissions
+Page -> Security : GET /api/auth/me
+alt Current session is an administrator
+    Security --> Page : 200, session roles
+    Admin -> Page : Search by corporate ID or display name
+    Page -> Security : GET /api/users?query=...
+    Security -> Controller : Authorize administrator
+    Controller -> Authz : searchUsers(query)
+    Authz -> Accounts : Find matching accounts
+    Accounts --> Authz : Accounts
+    Authz -> Audit : record(READ, user/search)
+    Authz --> Controller : User summaries
+    Controller --> Page : 200, results or empty list
+    alt No match
+        Page --> Admin : No matching users
+    else Account found
+        Page --> Admin : Show account and current roles
+        Admin -> Page : Choose Assign or Remove
+        Page --> Admin : Ask for confirmation
+        alt Cancel
+            Admin -> Page : Cancel
+        else Confirm
+            Admin -> Page : Confirm
+            Page -> Security : PUT or DELETE /api/users/{id}/roles/{role}
+            alt Session or permission denied
+                Security --> Page : 401 or 403
+            else Request authorized
+                Security -> Controller : Dispatch role change
+                Controller -> Authz : assignRole(id, role) or removeRole(id, role)
+                Authz -> Accounts : findForRoleChange(id) with write lock
+                alt Account no longer exists
+                    Accounts --> Authz : Empty result
+                    Authz --> Controller : NotFoundException
+                    Controller --> Page : 404 via the API error handler
+                else Account exists
+                    Accounts --> Authz : Managed UserAccount
+                    opt Role set changed
+                        Authz -> Authz : Update role set and flush transaction
+                        Authz -> Audit : record(ASSIGN_ROLE or REMOVE_ROLE, user/id/roles/role)
+                    end
+                    Controller --> Page : 204
+                    Page -> Security : Refresh GET /api/users?query=...
+                    Page --> Admin : Show updated roles and next-session notice
+                end
+            end
+        end
+    end
+else Session absent or another role
+    Security --> Page : 401 or roles without ADMINISTRATOR
+    Page --> Admin : Redirect to login or hide role controls
+end
+
+opt Target user starts a new session after a role change
+    Target -> Login : Corporate SSO login (CU-20)
+    Login -> Authz : getRoles(userId)
+    Authz -> Accounts : findById(userId)
+    Authz --> Login : Current roles for the new session
+end
+@enduml
+
+@startuml cu-18-classes
+title CU-18 - Design classes and interfaces
+package radio-auth {
+    class UserRoleController <<web>> {
+        +search(query): List<UserSummary>
+        +assign(id, role): void
+        +remove(id, role): void
+    }
+    interface IAuthorizationService <<api>> {
+        +assignRole(userId, role): void
+        +removeRole(userId, role): void
+        +getRoles(userId): Set<Role>
+        +hasPermission(userId, permission): boolean
+    }
+    class AuthorizationService <<application>> {
+        +searchUsers(query): List<UserSummary>
+    }
+    class UserSummary <<record>> {
+        id: String
+        displayName: String
+        active: boolean
+        roles: Set<Role>
+    }
+    class AuthenticationService <<application>>
+    interface UserAccountRepository <<infrastructure>> {
+        +findById(id): Optional<UserAccount>
+        +findForRoleChange(id): Optional<UserAccount>
+    }
+    class UserAccount <<entity>> {
+        -id: String
+        -displayName: String
+        -active: boolean
+        -roles: Set<Role>
+        +assignRole(role): boolean
+        +removeRole(role): boolean
+    }
+}
+package radio-common {
+    enum Role {
+        PATIENT
+        PHYSICIAN
+        ADMISSIONS
+        ADMINISTRATOR
+    }
+    class CurrentUser <<api>>
+}
+package radio-audit {
+    interface IAuditService <<api>> {
+        +record(actor, action, resource): void
+    }
+}
+
+UserRoleController --> AuthorizationService
+AuthorizationService ..|> IAuthorizationService
+AuthorizationService ..> UserSummary : returns search results
+AuthorizationService --> UserAccountRepository
+AuthorizationService ..> CurrentUser : checks administrator and session roles
+AuthorizationService --> IAuditService : records reads and effective changes
+AuthenticationService --> IAuthorizationService : loads roles on login
+UserAccountRepository ..> UserAccount
+UserAccount "1" --> "0..*" Role : assigned roles
+UserSummary ..> Role
+
+note right of UserRoleController
+  Spring Security requires ADMINISTRATOR
+  for all three endpoints. The service
+  checks the administrator again.
+end note
+
+note bottom of AuthorizationService
+  ADMINISTRATOR: CATALOGUE_EDIT, CONFIGURATION_EDIT,
+  USER_ROLES_EDIT, AUDIT_READ
+  ADMISSIONS: PATIENT_MANAGE, APPOINTMENT_BOOK
+  PHYSICIAN: TEST_PRESCRIBE, EXAM_RECORD, REPORT_SIGN
+  PATIENT: OWN_REQUESTS_READ, OWN_APPOINTMENTS_MANAGE,
+  OWN_HISTORY_READ
+
+  For OWN permissions, the module that owns
+  the resource checks its ownership.
+end note
+@enduml
