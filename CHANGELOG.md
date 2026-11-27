@@ -21,6 +21,7 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 ### radio-configuration
 - `IConfigurationService` contract with validity dates, `OpeningHoursDto`, `AppointmentPolicyDto`, `PriorityLevelDto`, `InvalidParameterException` (F-2, #39).
+- Added versioned system parameter storage, input validation and initial domain tests for CU-17-S (#25).
 
 ### radio-catalogue
 - `ICatalogueService` contract, `TestTypeDto`, `TestTypeData`, `Modality`, `ClinicalGuideDto`, `DuplicateTestTypeException`, `InvalidTestTypeException` (F-2, #39).
