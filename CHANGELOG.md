@@ -17,7 +17,6 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 ### radio-auth
 - `IAuthenticationService` and `IAuthorizationService` contracts, `AuthenticatedUserDto`, `AuthenticationFailedException` (F-2, #39).
 - CU-18-S tests: `UserRoleControllerTest` (administrator only on every `/api/users` endpoint, 401 anonymous, 404 unknown user, 400 unknown role) and `AuthorizationServiceContractTest` (H2 + real audit log: stored and audited role changes, no-op changes not audited, search, permissions, next-session rule); `pom.xml` declares the web, JPA and security starters it uses (#28).
-- CU-18-C tests: show the server message for a missing account and hide the role editor when a write is forbidden (#27).
 - Log in with the corporate SSO (CU-20-S, #34): `AuthenticationService` implements `IAuthenticationService` (identity from `ISsoGateway`, roles from `IAuthorizationService`, every attempt audited); `AuthController` with `POST /api/auth/login` (401 `invalid_token`, 403 `no_role`, 503 `sso_unavailable`), `GET /api/auth/me` and `POST /api/auth/logout`; `SecurityConfig` for the whole application: `/api/**` needs a session except the login, static client public, method security on, CSRF with the `XSRF-TOKEN` cookie and the `X-XSRF-TOKEN` header, JSON 401/403 instead of a login form, new session id and new CSRF token on login, CSRF cookie cleared on logout. Tests: `AuthenticationServiceTest`, `AuthControllerTest`, `LoginFlowIT` (simulator + roles of CU-18 on H2: physician forbidden on `/api/users`, role change effective at the next login).
 
 ### radio-configuration
@@ -30,6 +29,7 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 
 ### radio-app (client)
+- CU-18-C tests: show the server message for a missing account and hide the role editor when a write is forbidden (#27).
 - **F-3 client shell** (#40): login page with the simulated corporate SSO (`index.html`), menu by role with logout (`app.html`), shared API client `js/api.js` (CSRF header from the `XSRF-TOKEN` cookie on POST/PUT/PATCH/DELETE, `ApiError { status, error, message }`, 401 → login, 403 → "not allowed"; logout goes to the login page also when the session had already ended), menu registry `js/menu.js`, shared styles `css/app.css` and the page convention in `static/README.md`. The CU-18 page uses `js/api.js` and appears in the administrator menu. Test: `StaticClientIT` (client files public, scripts served as JavaScript, API still needs a session).
 
 ### Build
