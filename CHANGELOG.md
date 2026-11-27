@@ -22,11 +22,15 @@ Entries are grouped by module. Each version corresponds to one configuration `CF
 
 ### radio-configuration
 - `IConfigurationService` contract with validity dates, `OpeningHoursDto`, `AppointmentPolicyDto`, `PriorityLevelDto`, `InvalidParameterException` (F-2, #39).
+- Added versioned system parameter storage, input validation and initial domain tests for CU-17-S (#25).
 
 ### radio-catalogue
 - `ICatalogueService` contract, `TestTypeDto`, `TestTypeData`, `Modality`, `ClinicalGuideDto`, `DuplicateTestTypeException`, `InvalidTestTypeException` (F-2, #39).
 - Manage the catalogue of test types: `TestType` entity with server-side validation and logical deactivation, `CatalogueService` with an audit entry per change, `CatalogueController` under `/api/catalogue/test-types` (administrators write) and fictitious seed data for `dev`/`demo` (CU-23-S, #37).
 
+
+### radio-app (client)
+- **F-3 client shell** (#40): login page with the simulated corporate SSO (`index.html`), menu by role with logout (`app.html`), shared API client `js/api.js` (CSRF header from the `XSRF-TOKEN` cookie on POST/PUT/PATCH/DELETE, `ApiError { status, error, message }`, 401 → login, 403 → "not allowed"; logout goes to the login page also when the session had already ended), menu registry `js/menu.js`, shared styles `css/app.css` and the page convention in `static/README.md`. The CU-18 page uses `js/api.js` and appears in the administrator menu. Test: `StaticClientIT` (client files public, scripts served as JavaScript, API still needs a session).
 
 ### Build
 - **F-1 foundation**: parent POM `sescam-parent` `0.2.0-SNAPSHOT` with the Spring Boot 3.5.16 BOM (D-04, latest 3.5.x on Maven Central), `spring-boot-maven-plugin`, `parameters=true` in the compiler and the module list of CFG-01 (`docs/plans/scm-plan.md` §3.1.4).
