@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Catalogue of test types · SESCAM Radiodiagnostics</title>
+    <link rel="stylesheet" href="../css/app.css">
+    <style>
+        .catalogue { display: grid; gap: 1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .8rem; margin: 0; padding: 0; list-style: none; }
+        .card { display: flex; flex-direction: column; gap: .6rem; padding: .9rem; border: 1px solid var(--border); border-radius: .4rem; background: var(--surface); }
+        .card h2 { margin: 0; font-size: 1.05rem; }
+        .card dl { display: grid; grid-template-columns: auto 1fr; gap: .15rem .6rem; margin: 0; font-size: .9rem; }
+        .card dt { color: var(--muted); }
+        .card dd { margin: 0; }
+        .actions { display: flex; gap: .5rem; margin-top: auto; }
+        fieldset { margin: 0; padding: 1rem; border: 1px solid var(--border); border-radius: .4rem; background: var(--surface); }
+        legend { padding: 0 .4rem; font-weight: 600; }
+        .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .8rem; }
+        .fields > div { margin: 0; }
+        .checks { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: .8rem; }
+        .checks label { display: flex; align-items: center; gap: .4rem; font-weight: 400; }
+        .checks input { width: auto; }
+        .form-actions { display: flex; gap: .5rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <p><a href="../app.html">Back to menu</a></p>
+        <h1>Catalogue of test types</h1>
+        <p id="cu-23-status" class="status" role="status" aria-live="polite">Loading…</p>
+        <section id="cu-23-admin" class="catalogue" aria-label="Catalogue of test types" hidden>
+            <p><button id="cu-23-new" type="button">New test type</button></p>
+            <form id="cu-23-form" novalidate hidden>
+                <fieldset>
+                    <legend id="cu-23-legend">New test type</legend>
+                    <div class="fields">
+                        <div>
+                            <label for="cu-23-code">Code</label>
+                            <input id="cu-23-code" name="code" type="text" autocomplete="off" placeholder="RX-THORAX" required>
+                        </div>
+                        <div>
+                            <label for="cu-23-name">Name</label>
+                            <input id="cu-23-name" name="name" type="text" required>
+                        </div>
+                        <div>
+                            <label for="cu-23-modality">Modality</label>
+                            <select id="cu-23-modality" name="modality" required>
+                                <option value="">Choose…</option>
+                                <option value="XRAY">X-ray</option>
+                                <option value="ULTRASOUND">Ultrasound</option>
+                                <option value="MAMMOGRAPHY">Mammography</option>
+                                <option value="CT">CT</option>
+                                <option value="MRI">MRI</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="cu-23-room">Room or equipment</label>
+                            <input id="cu-23-room" name="room" type="text" required>
+                        </div>
+                        <div>
+                            <label for="cu-23-duration">Duration (minutes)</label>
+                            <input id="cu-23-duration" name="durationMinutes" type="number" min="1" step="1" required>
+                        </div>
+                        <div>
+                            <label for="cu-23-preparation">Preparation</label>
+                            <input id="cu-23-preparation" name="preparationInstructions" type="text">
+                        </div>
+                        <div>
+                            <label for="cu-23-restrictions">Restrictions</label>
+                            <input id="cu-23-restrictions" name="restrictions" type="text">
+                        </div>
+                    </div>
+                    <div class="checks">
+                        <label for="cu-23-contrast"><input id="cu-23-contrast" name="needsContrast" type="checkbox"> Needs contrast</label>
+                        <label for="cu-23-consent"><input id="cu-23-consent" name="needsConsent" type="checkbox"> Needs consent</label>
+                        <label for="cu-23-followup"><input id="cu-23-followup" name="suitableForFollowUp" type="checkbox"> Suitable for follow-up</label>
+                    </div>
+                    <div class="form-actions">
+                        <button id="cu-23-save" type="submit">Create test type</button>
+                        <button id="cu-23-cancel" type="button" class="secondary">Cancel</button>
+                    </div>
+                </fieldset>
+            </form>
+            <ul id="cu-23-list" class="grid" aria-label="Active test types"></ul>
+        </section>
+    </main>
+    <script type="module" src="./cu-23.js"></script>
+</body>
+</html>
