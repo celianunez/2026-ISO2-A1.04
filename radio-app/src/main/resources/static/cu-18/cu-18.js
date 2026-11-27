@@ -119,7 +119,7 @@ export async function startRolesPage(document, request, confirmChange = message 
     }
 }
 
-/** Fictitious transport for exercising the draft until the shared F-3 API client lands. */
+/** Fictitious transport to try the page without a server (`?demo=admin` or `?demo=patient`). */
 export function createDemoRequest(sessionRole = 'ADMINISTRATOR') {
     const users = [
         {id: 'patient01', displayName: 'Demo Patient One', active: true, roles: ['PATIENT']},
@@ -155,6 +155,7 @@ if (typeof document !== 'undefined') {
     if (demo === 'admin' || demo === 'patient') {
         startRolesPage(document, createDemoRequest(demo === 'admin' ? 'ADMINISTRATOR' : 'PATIENT'));
     } else {
-        document.getElementById('roles-status').textContent = 'The shared session client is not available yet.';
+        // Dynamic import, so the unit test (which loads this file alone) does not need api.js.
+        import('../js/api.js').then(({request}) => startRolesPage(document, request));
     }
 }

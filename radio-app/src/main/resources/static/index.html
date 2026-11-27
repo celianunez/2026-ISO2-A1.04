@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Log in · SESCAM Radiodiagnostics</title>
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="login">
+    <main class="card">
+        <h1>SESCAM Radiodiagnostics</h1>
+        <p class="muted">Log in with your corporate account.</p>
+        <form id="login-form">
+            <!-- Simulated corporate SSO (D-27): the fictitious users of SimulatedSsoGateway, token = "token-" + id. -->
+            <label for="login-user">Corporate user (simulated SSO)</label>
+            <select id="login-user" name="user" required>
+                <option value="patient01">Demo Patient One (patient01)</option>
+                <option value="patient02">Demo Patient Two (patient02)</option>
+                <option value="physician01">Demo Physician One (physician01)</option>
+                <option value="physician02">Demo Physician Two (physician02)</option>
+                <option value="admissions01">Demo Admissions One (admissions01)</option>
+                <option value="admin01">Demo Administrator (admin01)</option>
+                <option value="physicianadmin01">Demo Physician Administrator (physicianadmin01)</option>
+                <option value="norole01">Demo No Role (norole01)</option>
+                <option value="expired">Expired SSO session (test)</option>
+            </select>
+            <button id="login-submit" type="submit">Log in</button>
+        </form>
+        <p id="login-status" class="status" role="alert" aria-live="assertive"></p>
+    </main>
+    <script type="module" src="js/login.js"></script>
+</body>
+</html>
