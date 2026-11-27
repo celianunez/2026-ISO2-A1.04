@@ -92,6 +92,19 @@ class AuthControllerTest {
     }
 
     @Test
+    void loginRenewsTheCsrfToken() throws Exception {
+        when(authentication.loginWithSso("token-physician01")).thenReturn(PHYSICIAN);
+
+        MvcResult loggedIn = mvc.perform(login("token-physician01").cookie(new Cookie("XSRF-TOKEN", "before-login")))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Cookie csrfCookie = loggedIn.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(csrfCookie).isNotNull();
+        assertThat(csrfCookie.getValue()).isNotBlank().isNotEqualTo("before-login");
+    }
+
+    @Test
     void anInvalidTokenIsUnauthorized() throws Exception {
         when(authentication.loginWithSso("token-unknown")).thenThrow(
                 new AuthenticationFailedException(Reason.INVALID_TOKEN, "The corporate login was not accepted"));
@@ -170,6 +183,19 @@ class AuthControllerTest {
 
         verify(authentication).logout();
         assertThat(session.isInvalid()).isTrue();
+    }
+
+    @Test
+    void logoutClearsTheCsrfCookie() throws Exception {
+        when(authentication.loginWithSso("token-physician01")).thenReturn(PHYSICIAN);
+        MockHttpSession session = new MockHttpSession();
+        MvcResult loggedIn = mvc.perform(login("token-physician01").session(session)).andReturn();
+        Cookie csrfCookie = loggedIn.getResponse().getCookie("XSRF-TOKEN");
+
+        mvc.perform(post("/api/auth/logout").session(session).cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNoContent())
+                .andExpect(cookie().maxAge("XSRF-TOKEN", 0));
     }
 
     @Test

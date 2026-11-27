@@ -13,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 import java.io.IOException;
@@ -47,16 +48,28 @@ public class SecurityConfig {
     }
 
     /**
+     * Where the CSRF token is kept: the {@code XSRF-TOKEN} cookie, readable by {@code js/api.js}.
+     *
+     * @return the repository shared by the filter chain and the login controller (new token on login, cleared on
+     *         logout)
+     */
+    @Bean
+    public CsrfTokenRepository csrfTokenRepository() {
+        return CookieCsrfTokenRepository.withHttpOnlyFalse();
+    }
+
+    /**
      * Rules applied to every request.
      *
      * @param http                      the builder provided by Spring Security
      * @param securityContextRepository where the session keeps the logged-in user
+     * @param csrfTokenRepository       where the CSRF token is kept
      * @return the filter chain of the application
      * @throws Exception if Spring Security cannot build the chain
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-            SecurityContextRepository securityContextRepository) throws Exception {
+            SecurityContextRepository securityContextRepository, CsrfTokenRepository csrfTokenRepository) throws Exception {
         http
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .authorizeHttpRequests(requests -> requests
@@ -64,8 +77,10 @@ public class SecurityConfig {
                         .requestMatchers(PATHS.matcher("/api/**")).authenticated()
                         .anyRequest().permitAll())
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRepository(csrfTokenRepository)
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                        // The H2 console only exists in the dev profile (spring.h2.console.enabled); in the other
+                        // profiles nothing answers under /h2-console/**, so this exception has no effect there.
                         .ignoringRequestMatchers(PATHS.matcher(HttpMethod.POST, "/api/auth/login"),
                                 PATHS.matcher("/h2-console/**")))
                 // The H2 console (dev profile only) is drawn in frames of the same origin.

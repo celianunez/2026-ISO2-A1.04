@@ -16,6 +16,8 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfLogoutHandler;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,11 +41,16 @@ public class AuthController {
 
     private final IAuthenticationService authentication;
     private final SecurityContextRepository securityContextRepository;
+    private final CsrfTokenRepository csrfTokenRepository;
     private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+    private final CsrfLogoutHandler csrfLogoutHandler;
 
-    public AuthController(IAuthenticationService authentication, SecurityContextRepository securityContextRepository) {
+    public AuthController(IAuthenticationService authentication, SecurityContextRepository securityContextRepository,
+            CsrfTokenRepository csrfTokenRepository) {
         this.authentication = authentication;
         this.securityContextRepository = securityContextRepository;
+        this.csrfTokenRepository = csrfTokenRepository;
+        this.csrfLogoutHandler = new CsrfLogoutHandler(csrfTokenRepository);
     }
 
     /**
@@ -70,6 +77,12 @@ public class AuthController {
         context.setAuthentication(AuthenticationService.authenticationFor(user));
         SecurityContextHolder.setContext(context);
         securityContextRepository.saveContext(context, request, response);
+
+        // A new CSRF token on every login, like the session id. Without a previous token the filter has just
+        // created a fresh one, so there is nothing to renew.
+        if (csrfTokenRepository.loadToken(request) != null) {
+            csrfTokenRepository.saveToken(csrfTokenRepository.generateToken(request), request, response);
+        }
         return user;
     }
 
@@ -85,7 +98,7 @@ public class AuthController {
     }
 
     /**
-     * Ends the session (audited). Needs the CSRF header like any other POST.
+     * Ends the session (audited) and clears the CSRF token. Needs the CSRF header like any other POST.
      *
      * @param request  the HTTP request, whose session is invalidated
      * @param response the HTTP response
@@ -96,6 +109,7 @@ public class AuthController {
         Authentication current = SecurityContextHolder.getContext().getAuthentication();
         authentication.logout();
         logoutHandler.logout(request, response, current);
+        csrfLogoutHandler.logout(request, response, current);
     }
 
     @ExceptionHandler(AuthenticationFailedException.class)
