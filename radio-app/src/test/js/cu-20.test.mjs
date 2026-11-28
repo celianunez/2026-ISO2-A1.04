@@ -13,6 +13,12 @@ const { startLoginPage, SSO_TOKEN_PREFIX } = await load('js/login.js');
 const { startMenuPage } = await load('js/app.js');
 const { entriesFor } = await load('js/menu.js');
 
+// A fixed menu, so these tests check app.js and do not change when someone adds their page to js/menu.js.
+const TEST_MENU = Object.freeze([
+    { path: 'cu-18/index.html', label: 'Roles and permissions', roles: ['ADMINISTRATOR'] },
+]);
+const testEntriesFor = roles => entriesFor(roles, TEST_MENU);
+
 class Element {
     children = [];
     events = {};
@@ -176,7 +182,7 @@ function menuPage({ user, logout = async () => {} } = {}) {
     };
     return {
         ...page, location, windowEvents, logouts: () => logouts,
-        start: () => startMenuPage(page.document, api, entriesFor, fakeWindow),
+        start: () => startMenuPage(page.document, api, testEntriesFor, fakeWindow),
     };
 }
 

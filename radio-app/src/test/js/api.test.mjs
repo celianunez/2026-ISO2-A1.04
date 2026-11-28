@@ -217,10 +217,24 @@ test('the menu shows each role only its entries', () => {
     assert.deepEqual(entriesFor(['UNKNOWN'], menu), []);
 });
 
-test('the real menu gives the CU-18 page to administrators only', () => {
-    assert.deepEqual(entriesFor(['ADMINISTRATOR']).map(e => e.path), ['cu-18/index.html']);
-    for (const role of ['PATIENT', 'PHYSICIAN', 'ADMISSIONS']) {
-        assert.deepEqual(entriesFor([role]), [], role);
+test('every entry of the real menu is one use case page with known roles', () => {
+    const roles = ['PATIENT', 'PHYSICIAN', 'ADMISSIONS', 'ADMINISTRATOR'];
+    const paths = MENU.map(entry => entry.path);
+    assert.equal(new Set(paths).size, paths.length, 'no page twice');
+    for (const entry of MENU) {
+        assert.match(entry.path, /^cu-\d{2}\/index\.html$/);
+        assert.ok(entry.label, entry.path);
+        assert.ok(entry.roles.length > 0, entry.path);
+        assert.ok(entry.roles.every(role => roles.includes(role)), entry.path);
     }
     assert.ok(Object.isFrozen(MENU));
+});
+
+test('the administration pages of iteration 1 are in the menu of administrators only', () => {
+    const adminPages = ['cu-18/index.html', 'cu-23/index.html'];
+    const adminPaths = entriesFor(['ADMINISTRATOR']).map(entry => entry.path);
+    for (const path of adminPages) assert.ok(adminPaths.includes(path), path);
+    for (const role of ['PATIENT', 'PHYSICIAN', 'ADMISSIONS']) {
+        assert.deepEqual(entriesFor([role]).filter(entry => adminPages.includes(entry.path)), [], role);
+    }
 });
