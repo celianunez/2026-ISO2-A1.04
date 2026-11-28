@@ -1,0 +1,134 @@
+@startuml cu-20-client-sequence
+title CU-20-C - Log in with the corporate SSO (client)
+actor User
+boundary "Login page\nindex.html + login.js" as Login
+boundary "Menu page\napp.html + app.js" as Menu
+participant "api.js" as Api
+participant "Spring Security" as Security
+control AuthController as Controller
+
+== Open the application (A1: a session is already open) ==
+User -> Login : Open /
+Login -> Api : currentUser({redirectOn401: false})
+Api -> Security : GET /api/auth/me
+alt Session open
+    Security -> Controller : me()
+    Controller --> Api : 200 { id, displayName, roles }
+    Api --> Login : user
+    Login -> Menu : location.replace(app.html)
+else No session
+    Security --> Api : 401 unauthenticated
+    Api --> Login : ApiError 401 (no redirect)
+    Login --> User : Show the simulated SSO user list
+end
+
+== Main flow: log in with the simulated SSO ==
+User -> Login : Choose a corporate user, press Log in
+Login -> Login : Disable the button (a double click sends one login)
+Login -> Api : login("token-" + userId)
+Api -> Security : POST /api/auth/login { token }
+Security -> Controller : login(body)
+alt Identity with roles
+    Controller --> Api : 200 { id, displayName, roles }\nnew session id and CSRF token
+    Api --> Login : user
+    Login -> Menu : location.assign(app.html)
+else E1: SSO unavailable
+    Controller --> Api : 503 sso_unavailable\n"Corporate login is not available, try again later"
+    Api --> Login : ApiError 503
+    Login --> User : Show the message, enable the button again
+else E2: identity without a role
+    Controller --> Api : 403 no_role
+    Api --> Login : ApiError 403
+    Login --> User : Show "no access to this application"
+else Token not recognised or expired
+    Controller --> Api : 401 invalid_token
+    Api --> Login : ApiError 401 (no redirect on the login page)
+    Login --> User : Show "The corporate login was not accepted"
+end
+
+== Menu by role ==
+Menu -> Api : currentUser()
+Api -> Security : GET /api/auth/me
+alt Session open
+    Security -> Controller : me()
+    Controller --> Api : 200 user
+    Api --> Menu : user
+    Menu -> Menu : entriesFor(user.roles) (menu.js)
+    Menu --> User : Name, roles, the entries of the roles and Log out
+else E3: session expired
+    Security --> Api : 401
+    Api -> Login : location.assign(index.html?ended=1)
+    Login --> User : "Your session has ended. Log in again."
+end
+
+== Log out ==
+User -> Menu : Log out
+Menu -> Api : logout()
+Api -> Security : POST /api/auth/logout (X-XSRF-TOKEN)
+alt Session open
+    Security -> Controller : logout()
+    Controller --> Api : 204, session and CSRF cookie cleared
+    Api -> Login : location.assign(index.html)
+else Session had already ended
+    Security --> Api : 401
+    Api -> Login : location.assign(index.html?ended=1)
+end
+User -> Menu : Browser back button
+Menu -> Menu : pageshow (persisted) -> reload
+Menu -> Api : currentUser() -> 401 -> login page
+@enduml
+
+@startuml cu-20-client-classes
+title CU-20-C - Client modules and the server contract they use
+hide empty members
+
+package "radio-app/src/main/resources/static" {
+    class "js/login.js" as LoginJs <<module>> {
+        +SSO_TOKEN_PREFIX = "token-"
+        +startLoginPage(document, api, location)
+    }
+    class "js/app.js" as AppJs <<module>> {
+        +ROLE_NAMES
+        +startMenuPage(document, api, entriesFor, window)
+    }
+    class "js/menu.js" as MenuJs <<module>> {
+        +MENU
+        +entriesFor(roles, menu)
+    }
+    class "js/api.js" as ApiJs <<module>> {
+        +LOGIN_PAGE
+        +MENU_PAGE
+        +request(path, options)
+        +login(token)
+        +currentUser(options)
+        +logout()
+        +requireUser(roles)
+        +hasAnyRole(user, roles)
+    }
+    class ApiError {
+        +status : number
+        +error : string
+        +message : string
+    }
+}
+
+package "radio-auth (CU-20-S)" {
+    class AuthController <<RestController>> {
+        +POST /api/auth/login
+        +GET /api/auth/me
+        +POST /api/auth/logout
+    }
+    interface IAuthenticationService {
+        +loginWithSso(token) : AuthenticatedUserDto
+        +currentUser() : Optional<AuthenticatedUserDto>
+        +logout()
+    }
+}
+
+LoginJs ..> ApiJs : login, currentUser
+AppJs ..> ApiJs : currentUser, logout
+AppJs ..> MenuJs : entriesFor
+ApiJs ..> ApiError : throws
+ApiJs ..> AuthController : HTTP / JSON
+AuthController --> IAuthenticationService
+@enduml
