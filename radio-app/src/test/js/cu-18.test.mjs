@@ -117,3 +117,41 @@ test('the demo searches by corporate ID or display name without leaking mutable 
     assert.deepEqual(await demo('/api/users?query=absent'), []);
     await assert.rejects(demo('/api/users/absent/roles/PATIENT', {method: 'DELETE'}), {status: 404});
 });
+
+test('a missing account leaves the role editor open and shows the server error', async () => {
+    const page = fixture();
+    const demo = createDemoRequest();
+    const message = 'User not found.';
+    await startRolesPage(page.document, (path, options) => {
+        if (path === '/api/users/patient01/roles/PATIENT' && options?.method === 'DELETE') {
+            return Promise.reject(Object.assign(new Error(message), {status: 404}));
+        }
+        return demo(path, options);
+    }, () => true);
+
+    const remove = page.button('Remove Patient from Demo Patient One');
+    await remove.events.click();
+
+    assert.equal(page.status.textContent, message);
+    assert.equal(page.admin.hidden, false);
+    assert.equal(remove.disabled, false);
+});
+
+test('a forbidden role change hides the editor and clears the displayed accounts', async () => {
+    const page = fixture();
+    const demo = createDemoRequest();
+    const message = 'You are not allowed to do this.';
+    await startRolesPage(page.document, (path, options) => {
+        if (path === '/api/users/patient01/roles/PATIENT' && options?.method === 'DELETE') {
+            return Promise.reject(Object.assign(new Error(message), {status: 403}));
+        }
+        return demo(path, options);
+    }, () => true);
+
+    assert.equal(page.admin.hidden, false);
+    await page.button('Remove Patient from Demo Patient One').events.click();
+
+    assert.equal(page.status.textContent, message);
+    assert.equal(page.admin.hidden, true);
+    assert.equal(page.results.children.length, 0);
+});
