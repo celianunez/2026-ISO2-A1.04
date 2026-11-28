@@ -43,7 +43,9 @@ export function validate(data) {
     if (data.code && !CODE.test(data.code)) {
         problems.push('Code must contain only upper-case letters, digits and hyphens.');
     }
-    if (!(data.durationMinutes > 0)) problems.push('Duration must be a positive number of minutes.');
+    if (!Number.isInteger(data.durationMinutes) || data.durationMinutes <= 0) {
+        problems.push('Duration must be a whole number of minutes.');
+    }
     return problems;
 }
 
@@ -142,7 +144,12 @@ export async function startCataloguePage(document, request, options = {}) {
 
     async function load() {
         const items = await request(BASE);
-        list.replaceChildren(...items.map(renderItem));
+        // A <ul> only accepts <li> children, so each card goes inside one: screen readers count the list.
+        list.replaceChildren(...items.map(item => {
+            const row = make(document, 'li');
+            row.append(renderItem(item));
+            return row;
+        }));
         show(items.length ? '' : 'No active test types.');
     }
 

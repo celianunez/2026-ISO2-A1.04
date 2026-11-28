@@ -113,6 +113,7 @@ test('an administrator creates a test type with the mandatory fields and it appe
 
     assert.equal(page.form.hidden, true);
     assert.equal(page.cards().length, 4);
+    assert.equal(page.cards()[3].tag, 'li');   // a <ul> only accepts <li> children
     assert.equal(page.cards()[3].descendants().find(node => node.tag === 'h2').textContent,
         'Brain MRI (MRI-BRAIN)');
     assert.match(page.status.textContent, /created: Brain MRI/);
@@ -141,9 +142,32 @@ test('a missing mandatory field is rejected on the client and no request is sent
     assert.equal(page.cards().length, 3);
 
     assert.deepEqual(validate({code: 'T01', name: 'Test', modality: 'CT', room: 'CT-01', durationMinutes: 0}),
-        ['Duration must be a positive number of minutes.']);
+        ['Duration must be a whole number of minutes.']);
+    assert.deepEqual(validate({code: 'T01', name: 'Test', modality: 'CT', room: 'CT-01', durationMinutes: 1.5}),
+        ['Duration must be a whole number of minutes.']);
+    assert.deepEqual(validate({code: 'T01', name: 'Test', modality: 'CT', room: 'CT-01', durationMinutes: 5}), []);
     assert.deepEqual(validate({code: 'bad code', name: 'Test', modality: 'CT', room: 'CT-01', durationMinutes: 5}),
         ['Code must contain only upper-case letters, digits and hyphens.']);
+});
+
+test('a duration that is not a whole number of minutes is rejected on the client', async () => {
+    const page = fixture();
+    const demo = createDemoRequest();
+    const requests = [];
+    await startCataloguePage(page.document, (path, options) => {
+        requests.push((options?.method || 'GET') + ' ' + path);
+        return demo(path, options);
+    });
+
+    page.el['cu-23-new'].events.click();
+    fill(page, {duration: '1.5'});
+    await page.submit();
+
+    assert.equal(page.status.attributes.role, 'alert');
+    assert.match(page.status.textContent, /whole number of minutes/);
+    assert.equal(page.form.hidden, false);
+    assert.deepEqual(requests, ['GET /api/auth/me', 'GET /api/catalogue/test-types']);
+    assert.equal(page.cards().length, 3);
 });
 
 test('a repeated code is rejected by the server and the list does not change', async () => {
