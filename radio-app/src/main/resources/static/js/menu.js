@@ -8,6 +8,7 @@
  */
 export const MENU = Object.freeze([
     {path: 'cu-18/index.html', label: 'Roles and permissions', roles: ['ADMINISTRATOR']},
+    {path: 'cu-23/index.html', label: 'Catalogue of test types', roles: ['ADMINISTRATOR']},
 ]);
 
 /** The entries that a user with these roles may see, in menu order. */
