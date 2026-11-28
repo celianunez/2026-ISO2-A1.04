@@ -29,7 +29,8 @@ class StaticClientIT {
 
     @ParameterizedTest
     @ValueSource(strings = {"/", "/index.html", "/app.html", "/css/app.css", "/js/api.js", "/js/menu.js",
-            "/js/login.js", "/js/app.js", "/cu-18/index.html", "/cu-18/cu-18.js"})
+            "/js/login.js", "/js/app.js", "/cu-18/index.html", "/cu-18/cu-18.js", "/cu-23/index.html",
+            "/cu-23/cu-23.js"})
     void theClientFilesArePublic(String path) throws Exception {
         mvc.perform(get(path)).andExpect(status().isOk());
     }
